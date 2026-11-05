@@ -45,4 +45,20 @@ export const authService = {
     if (error || !data) return null
     return data.household_id
   },
+
+  async resetPassword(email: string): Promise<void> {
+    const redirectTo = `${window.location.origin}/reset-password`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) throw new Error(`Nie udało się wysłać linku: ${error.message}`)
+  },
+
+  async updatePassword(newPassword: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw new Error(`Nie udało się zmienić hasła: ${error.message}`)
+  },
+
+  async updateEmail(newEmail: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ email: newEmail })
+    if (error) throw new Error(`Nie udało się zmienić adresu e-mail: ${error.message}`)
+  },
 }

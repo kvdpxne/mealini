@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
+import { UNITS } from '@/lib/units'
 import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
 
@@ -42,12 +43,7 @@ async function handleSubmit() {
     <input v-model="name" type="text" placeholder="Nazwa produktu" required/>
     <input v-model.number="quantity" type="number" min="0.01" step="0.01" placeholder="Ilość"/>
     <select v-model="unit">
-      <option value="szt">szt</option>
-      <option value="kg">kg</option>
-      <option value="g">g</option>
-      <option value="l">l</option>
-      <option value="ml">ml</option>
-      <option value="opak">opak</option>
+      <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
     </select>
     <input v-model="expiryDate" type="date" title="Data ważności (opcjonalnie)"/>
     <button type="submit" :disabled="submitting">

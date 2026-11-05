@@ -61,9 +61,37 @@ export const useAuthStore = defineStore('auth', () => {
     householdId.value = await authService.getCurrentUserHouseholdId()
   }
 
+  async function resetPassword(email: string) {
+    loading.value = true
+    try {
+      await authService.resetPassword(email)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updatePassword(newPassword: string) {
+    loading.value = true
+    try {
+      await authService.updatePassword(newPassword)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateEmail(newEmail: string) {
+    loading.value = true
+    try {
+      await authService.updateEmail(newEmail)
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     session, user, householdId, initialized, loading,
     isAuthenticated,
     initialize, signIn, signUp, signOut, refreshHouseholdId,
+    resetPassword, updatePassword, updateEmail
   }
 })

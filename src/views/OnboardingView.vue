@@ -6,7 +6,7 @@ import JoinHouseholdForm from '@/components/onboarding/JoinHouseholdForm.vue'
 <template>
   <div class="onboarding">
     <header>
-      <h1>Witaj w Lodówce 👋</h1>
+      <h1>Witaj w Lodówce</h1>
       <p>Skonfigurujmy Twoje gospodarstwo domowe. Utwórz nowe lub dołącz do istniejącego kodem od partnerki.</p>
     </header>
     <div class="grid">

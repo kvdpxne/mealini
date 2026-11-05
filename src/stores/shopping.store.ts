@@ -11,16 +11,23 @@ export const useShoppingStore = defineStore('shopping', () => {
   const toBuy = computed(() => items.value.filter(i => !i.is_bought))
   const bought = computed(() => items.value.filter(i => i.is_bought))
 
-  async function fetchItems(householdId: string) {
+  async function fetchItems(householdId: string, opts: { silent?: boolean } = {}) {
     loading.value = true
-    error.value = null
+    if (!opts.silent) error.value = null
     try {
       items.value = await shoppingService.getItems(householdId)
+      error.value = null
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Nieznany błąd'
+      if (!opts.silent) {
+        error.value = e instanceof Error ? e.message : 'Nieznany błąd'
+      }
     } finally {
       loading.value = false
     }
+  }
+
+  function clearError() {
+    error.value = null
   }
 
   async function addItem(householdId: string, name: string) {
@@ -62,7 +69,7 @@ export const useShoppingStore = defineStore('shopping', () => {
 
   return {
     items, loading, error, toBuy, bought,
-    fetchItems, addItem, toggleBought, deleteItem, clearBought,
+    fetchItems, clearError, addItem, toggleBought, deleteItem, clearBought,
     moveToFridge, moveAllBoughtToFridge
   }
 })

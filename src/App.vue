@@ -2,6 +2,7 @@
 import {onMounted} from 'vue'
 import {useAuthStore} from '@/stores/auth.store'
 import AppHeader from '@/components/shared/AppHeader.vue'
+import BottomNav from '@/components/shared/BottomNav.vue'
 import ToastContainer from '@/components/shared/ToastContainer.vue'
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 
@@ -11,9 +12,10 @@ onMounted(() => authStore.initialize())
 
 <template>
   <AppHeader v-if="authStore.isAuthenticated && authStore.householdId"/>
-  <main>
+  <main :class="{ 'with-header': authStore.isAuthenticated && authStore.householdId }">
     <RouterView/>
   </main>
+  <BottomNav v-if="authStore.isAuthenticated && authStore.householdId"/>
   <ToastContainer/>
   <ConfirmDialog/>
 </template>
@@ -33,6 +35,17 @@ body {
 main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom));
+  padding: 2rem 1.5rem;
+}
+
+main.with-header {
+  padding-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  main {
+    padding: 1rem;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
 }
 </style>

@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import type {FridgeItem} from '@/types/database.types'
+import { toRef } from 'vue'
+import { ShoppingCart, Trash2, Pencil } from 'lucide-vue-next'
+import type { FridgeItem } from '@/types/database.types'
 import EditableQuantity from './EditableQuantity.vue'
-import {formatRelativeExpiry} from '@/utils/date'
-import {categorize} from "@/composables/useFridgeItems.ts";
+import { formatRelativeExpiry } from '@/utils/date'
+import { useFridgeItems } from '@/composables/useFridgeItems'
 
 const props = defineProps<{ items: FridgeItem[]; loading: boolean }>()
 const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'move-to-shopping', id: string): void
   (e: 'update-quantity', id: string, quantity: number): void
+  (e: 'edit', item: FridgeItem): void
 }>()
+
+const { categorize } = useFridgeItems(toRef(props, 'items'))
 
 function badgeClass(item: FridgeItem) {
   return `badge--${categorize(item.expiry_date)}`
@@ -35,8 +40,15 @@ function badgeClass(item: FridgeItem) {
         </span>
       </div>
       <div class="actions">
-        <button title="Skończyło się – dodaj do zakupów" @click="emit('move-to-shopping', item.id)">🛒</button>
-        <button title="Usuń" @click="emit('delete', item.id)">🗑</button>
+        <button title="Edytuj" @click="emit('edit', item)">
+          <Pencil :size="18" />
+        </button>
+        <button title="Skończyło się – dodaj do zakupów" @click="emit('move-to-shopping', item.id)">
+          <ShoppingCart :size="18" />
+        </button>
+        <button title="Usuń" @click="emit('delete', item.id)">
+          <Trash2 :size="18" />
+        </button>
       </div>
     </li>
   </ul>
@@ -112,7 +124,17 @@ function badgeClass(item: FridgeItem) {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.25rem;
+  padding: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.actions button:hover {
+  background: #f3f4f6;
+  color: #111;
 }
 </style>

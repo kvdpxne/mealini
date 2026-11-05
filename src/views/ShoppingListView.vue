@@ -1,60 +1,87 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
-import {useToastStore} from '@/stores/toast.store'
-import {useConfirmStore} from '@/stores/confirm.store'
+import {storeToRefs} from 'pinia'
+import {PackagePlus} from 'lucide-vue-next'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useAuthStore} from '@/stores/auth.store'
+import {useConfirmStore} from '@/stores/confirm.store'
+import {useAsyncAction} from '@/composables/useAsyncAction'
 import {useRealtimeSubscription} from '@/composables/useRealtimeSubscription'
+import {useShoppingItems} from '@/composables/useShoppingItems'
 import ShoppingItemList from '@/components/shopping/ShoppingItemList.vue'
+import ShoppingFilters from '@/components/shopping/ShoppingFilters.vue'
+import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 
-const toast = useToastStore()
-const confirm = useConfirmStore()
 const shoppingStore = useShoppingStore()
 const authStore = useAuthStore()
+const confirm = useConfirmStore()
+const {items, error} = storeToRefs(shoppingStore)
+const {run} = useAsyncAction()
+const {run: runMoveAll, pending: movingAll} = useAsyncAction()
+
+const search = ref('')
+const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
+
 const newItem = ref('')
 
-async function refresh() {
+async function initialFetch() {
+  if (authStore.householdId) await shoppingStore.fetchItems(authStore.householdId)
+}
+
+async function realtimeRefresh() {
   if (authStore.householdId) {
-    await shoppingStore.fetchItems(authStore.householdId)
+    await shoppingStore.fetchItems(authStore.householdId, {silent: true})
   }
 }
 
 async function handleAdd() {
   if (!authStore.householdId || !newItem.value.trim()) return
-  await shoppingStore.addItem(authStore.householdId, newItem.value)
-  newItem.value = ''
-  toast.show('Dodano do listy', 'success')
+  const result = await run(
+    () => shoppingStore.addItem(authStore.householdId!, newItem.value),
+    {success: 'Dodano do listy'},
+  )
+  if (result !== undefined) newItem.value = ''
+}
+
+async function handleToggle(id: string) {
+  await run(() => shoppingStore.toggleBought(id))
+}
+
+async function handleDelete(id: string) {
+  const ok = await confirm.ask('Usunąć tę pozycję?', 'Usuń pozycję')
+  if (!ok) return
+  await run(() => shoppingStore.deleteItem(id), {success: 'Usunięto z listy'})
 }
 
 async function handleClear() {
   if (!authStore.householdId) return
   const ok = await confirm.ask('Usunąć wszystkie kupione pozycje?', 'Wyczyść listę')
   if (!ok) return
-  await shoppingStore.clearBought(authStore.householdId)
-  toast.show('Wyczyszczono kupione', 'success')
+  await run(
+    () => shoppingStore.clearBought(authStore.householdId!),
+    {success: 'Wyczyszczono kupione'},
+  )
+}
+
+async function handleMoveToFridge(id: string) {
+  await run(
+    () => shoppingStore.moveToFridge(id),
+    {success: 'Przeniesiono do lodówki'},
+  )
 }
 
 async function handleMoveAllBought() {
   if (!authStore.householdId) return
-  const count = await shoppingStore.moveAllBoughtToFridge(authStore.householdId)
-  toast.show(`Przeniesiono ${count} ${count === 1 ? 'produkt' : 'produktów'} do lodówki`, 'success')
+  await runMoveAll(
+    () => shoppingStore.moveAllBoughtToFridge(authStore.householdId!),
+    {
+      success: n => `Przeniesiono ${n} ${n === 1 ? 'produkt' : 'produktów'} do lodówki`,
+    },
+  )
 }
 
-async function handleMoveToFridge(id: string) {
-  await shoppingStore.moveToFridge(id)
-  toast.show('Przeniesiono do lodówki', 'success')
-}
-
-async function handleDelete(id: string) {
-  const ok = await confirm.ask('Usunąć tę pozycję?', 'Usuń')
-  if (!ok) return
-  await shoppingStore.deleteItem(id)
-  toast.show('Usunięto', 'info')
-}
-
-onMounted(refresh)
-useRealtimeSubscription('shopping_list_items', refresh)
-useRealtimeSubscription('fridge_items', refresh)
+onMounted(initialFetch)
+useRealtimeSubscription('shopping_list_items', realtimeRefresh)
 </script>
 
 <template>
@@ -66,31 +93,36 @@ useRealtimeSubscription('fridge_items', refresh)
       <button type="submit">Dodaj</button>
     </form>
 
-    <p v-if="shoppingStore.error" class="error">{{ shoppingStore.error }}</p>
+    <ShoppingFilters v-model:search="search"/>
+
+    <ErrorBanner v-if="error" :message="error" @dismiss="shoppingStore.clearError"/>
 
     <section>
-      <h2>Do kupienia</h2>
+      <h2>Do kupienia <span v-if="toBuy.length" class="count">({{ toBuy.length }})</span></h2>
       <ShoppingItemList
-        :items="shoppingStore.toBuy"
-        empty-text="Nic do kupienia 🎉"
-        @toggle="shoppingStore.toggleBought($event)"
-        @delete="shoppingStore.deleteItem($event)"
-        @move-to-fridge="shoppingStore.moveToFridge($event)"
+        :items="toBuy"
+        :empty-text="isSearchActive ? 'Brak wyników w liście do kupienia.' : 'Nic do kupienia.'"
+        @toggle="handleToggle"
+        @delete="handleDelete"
+        @move-to-fridge="handleMoveToFridge"
       />
     </section>
 
-    <section v-if="shoppingStore.bought.length > 0">
+    <section v-if="bought.length > 0">
       <div class="section-head">
-        <h2>Kupione</h2>
+        <h2>Kupione <span class="count">({{ bought.length }})</span></h2>
         <div class="bulk-actions">
-          <button class="secondary" @click="handleMoveAllBought">🧊 Przenieś do lodówki</button>
+          <button class="secondary" :disabled="movingAll" @click="handleMoveAllBought">
+            <PackagePlus :size="16"/>
+            <span>{{ movingAll ? 'Przenoszenie...' : 'Przenieś do lodówki' }}</span>
+          </button>
           <button class="secondary" @click="handleClear">Wyczyść</button>
         </div>
       </div>
       <ShoppingItemList
-        :items="shoppingStore.bought"
+        :items="bought"
         empty-text=""
-        @toggle="shoppingStore.toggleBought($event)"
+        @toggle="handleToggle"
         @delete="handleDelete"
         @move-to-fridge="handleMoveToFridge"
       />
@@ -107,6 +139,12 @@ useRealtimeSubscription('fridge_items', refresh)
   font-size: 1.05rem;
   margin: 0;
   color: #374151;
+}
+
+.count {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 0.9rem;
 }
 
 .add-form {
@@ -145,6 +183,9 @@ useRealtimeSubscription('fridge_items', refresh)
 }
 
 .secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: transparent;
   border: 1px solid #d1d5db;
   padding: 0.3rem 0.75rem;
@@ -157,8 +198,8 @@ useRealtimeSubscription('fridge_items', refresh)
   background: #f3f4f6;
 }
 
-.error {
-  color: #c00;
-  margin-top: 0.75rem;
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

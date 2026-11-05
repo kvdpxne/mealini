@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {PackagePlus, Trash2} from 'lucide-vue-next'
 import type {ShoppingListItem} from '@/types/database.types'
 
 defineProps<{ items: ShoppingListItem[]; emptyText: string }>()
@@ -10,6 +11,7 @@ const emit = defineEmits<{
 }>()
 </script>
 
+<
 <template>
   <p v-if="items.length === 0" class="empty">{{ emptyText }}</p>
   <ul v-else class="list">
@@ -23,9 +25,12 @@ const emit = defineEmits<{
           class="move"
           title="Przenieś do lodówki"
           @click="emit('move-to-fridge', item.id)"
-        >🧊
+        >
+          <PackagePlus :size="18"/>
         </button>
-        <button title="Usuń" @click="emit('delete', item.id)">🗑</button>
+        <button title="Usuń" @click="emit('delete', item.id)">
+          <Trash2 :size="18"/>
+        </button>
       </div>
     </li>
   </ul>
@@ -78,13 +83,23 @@ const emit = defineEmits<{
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
-  padding: 0.25rem;
+  padding: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.actions button:hover {
+  background: #f3f4f6;
+  color: #111;
 }
 
 .actions .move {
   opacity: 0.4;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
 
 .list li:hover .move, .list li.bought .move {

@@ -35,6 +35,7 @@ async function handleSubmit() {
     <button type="submit" :disabled="authStore.loading">
       {{ authStore.loading ? 'Logowanie...' : 'Zaloguj' }}
     </button>
+    <RouterLink to="/forgot-password" class="forgot">Nie pamiętam hasła</RouterLink>
   </form>
 </template>
 
@@ -67,5 +68,12 @@ async function handleSubmit() {
 .error {
   color: #c00;
   font-size: 0.85rem;
+}
+
+.forgot {
+  font-size: 0.85rem;
+  color: #0a7;
+  text-align: center;
+  margin-top: 0.25rem;
 }
 </style>

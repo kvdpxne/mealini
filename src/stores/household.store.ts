@@ -43,10 +43,6 @@ export const useHouseholdStore = defineStore('household', () => {
     }
   }
 
-  async function fetchInviteCode(householdId: string) {
-    inviteCode.value = await householdService.getInviteCode(householdId)
-  }
-
   async function fetchDetails(householdId: string) {
     loading.value = true
     error.value = null
@@ -80,7 +76,7 @@ export const useHouseholdStore = defineStore('household', () => {
 
   return {
     details, members, loading, error,
-    create, join, fetchInviteCode,
+    create, join,
     fetchDetails, rename, regenerateCode, leave,
   }
 })

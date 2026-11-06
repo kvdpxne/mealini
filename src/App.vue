@@ -5,6 +5,7 @@ import AppHeader from '@/components/shared/AppHeader.vue'
 import BottomNav from '@/components/shared/BottomNav.vue'
 import ToastContainer from '@/components/shared/ToastContainer.vue'
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
+import ErrorBoundary from '@/components/shared/ErrorBoundary.vue'
 
 const authStore = useAuthStore()
 onMounted(() => authStore.initialize())
@@ -13,7 +14,9 @@ onMounted(() => authStore.initialize())
 <template>
   <AppHeader v-if="authStore.isAuthenticated && authStore.householdId"/>
   <main :class="{ 'with-header': authStore.isAuthenticated && authStore.householdId }">
-    <RouterView/>
+    <ErrorBoundary>
+      <RouterView/>
+    </ErrorBoundary>
   </main>
   <BottomNav v-if="authStore.isAuthenticated && authStore.householdId"/>
   <ToastContainer/>

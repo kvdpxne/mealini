@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {computed, ref, watch} from 'vue'
+import {RouterLink} from 'vue-router'
+import {Home, User} from 'lucide-vue-next'
 import {useAuthStore} from '@/stores/auth.store'
 import {useToastStore} from '@/stores/toast.store'
+import {useProfileStore} from '@/stores/profile.store'
+import {useAsyncAction} from '@/composables/useAsyncAction'
+import {displayName} from '@/utils/displayName'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
+const {run} = useAsyncAction()
 const toast = useToastStore()
 
 const currentPassword = ref('')
@@ -55,11 +62,87 @@ async function handleEmailChange() {
     emailLoading.value = false
   }
 }
+
+const firstName = ref('')
+const lastName = ref('')
+const nickname = ref('')
+const profileLoading = ref(false)
+
+watch(
+  () => profileStore.profile,
+  (p) => {
+    if (!p) return
+    firstName.value = p.first_name ?? ''
+    lastName.value = p.last_name ?? ''
+    nickname.value = p.nickname ?? ''
+  },
+  {immediate: true},
+)
+
+const previewName = computed(() =>
+  displayName({nickname: nickname.value, email: authStore.user?.email}),
+)
+
+async function handleProfileSave() {
+  profileLoading.value = true
+  const result = await run(
+    () =>
+      profileStore.update({
+        first_name: firstName.value,
+        last_name: lastName.value,
+        nickname: nickname.value,
+      }),
+    {success: 'Profil zaktualizowany'},
+  )
+  profileLoading.value = false
+  if (!result) {
+    const p = profileStore.profile
+    if (p) {
+      firstName.value = p.first_name ?? ''
+      lastName.value = p.last_name ?? ''
+      nickname.value = p.nickname ?? ''
+    }
+  }
+}
 </script>
 
 <template>
   <div class="settings-view">
     <h1>Ustawienia konta</h1>
+
+    <RouterLink to="/household" class="household-link">
+      <Home :size="16"/>
+      <span>Przejdź do ustawień gospodarstwa</span>
+    </RouterLink>
+
+    <section class="card">
+      <h2>Profil</h2>
+      <p class="hint">
+        Nickname jest widoczny dla innych członków gospodarstwa. Imię i nazwisko
+        będą używane wyłącznie w korespondencji e-mail.
+      </p>
+      <form @submit.prevent="handleProfileSave">
+        <label>
+          Imię
+          <input v-model="firstName" type="text" maxlength="50" autocomplete="given-name"/>
+        </label>
+        <label>
+          Nazwisko
+          <input v-model="lastName" type="text" maxlength="50" autocomplete="family-name"/>
+        </label>
+        <label>
+          Nickname
+          <input v-model="nickname" type="text" maxlength="30" placeholder="np. anka"/>
+        </label>
+        <p class="preview">
+          <User :size="14"/>
+          <span>Tak widzą Cię inni: <strong>{{ previewName }}</strong></span>
+        </p>
+        <button type="submit" :disabled="profileLoading">
+          {{ profileLoading ? 'Zapisywanie...' : 'Zapisz profil' }}
+        </button>
+      </form>
+    </section>
 
     <section class="card">
       <h2>Zmiana hasła</h2>
@@ -181,5 +264,35 @@ button:disabled {
   font-size: 0.9rem;
   margin: 0 0 0.5rem;
   color: #4b5563;
+}
+
+.household-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  text-decoration: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.household-link:hover {
+  background: #e5e7eb;
+}
+
+.preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.preview strong {
+  color: #111;
 }
 </style>

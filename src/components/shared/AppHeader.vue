@@ -2,8 +2,11 @@
 import {LogOut, Refrigerator} from 'lucide-vue-next'
 import {RouterLink, useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
+import {useProfileStore} from '@/stores/profile.store'
+import {displayName} from '@/utils/displayName'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const router = useRouter()
 
 async function handleLogout() {
@@ -28,7 +31,9 @@ async function handleLogout() {
       </nav>
 
       <div class="user">
-        <span class="email">{{ authStore.user?.email }}</span>
+        <span class="name" :title="authStore.user?.email ?? undefined">
+          {{ displayName(profileStore.profile ?? authStore.user) }}
+        </span>
         <button class="logout" title="Wyloguj" @click="handleLogout">
           <LogOut :size="16"/>
         </button>
@@ -94,10 +99,14 @@ async function handleLogout() {
   gap: 0.75rem;
 }
 
-.email {
+.name {
   font-size: 0.85rem;
   color: #d1d5db;
-  opacity: 0.8;
+  opacity: 0.85;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logout {

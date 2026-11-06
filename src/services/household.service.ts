@@ -2,8 +2,9 @@ import {supabase} from '@/lib/supabaseClient'
 
 export interface HouseholdMember {
   user_id: string
-  email: string
   joined_at: string
+  nickname: string | null
+  email: string | null
 }
 
 export interface HouseholdDetails {

@@ -9,6 +9,7 @@ import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {formatRelativeExpiry} from '@/utils/date'
+import {displayName} from '@/utils/displayName'
 
 const householdStore = useHouseholdStore()
 const authStore = useAuthStore()
@@ -126,7 +127,7 @@ onMounted(load)
       <ul class="members">
         <li v-for="m in members" :key="m.user_id">
           <div class="member-main">
-            <strong>{{ m.email }}</strong>
+            <strong>{{ displayName(m) }}</strong>
             <span v-if="m.user_id === authStore.user?.id" class="badge-you">Ty</span>
           </div>
           <span class="joined">dołączył(a) {{ formatRelativeExpiry(m.joined_at) }}</span>

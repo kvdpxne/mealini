@@ -22,3 +22,12 @@ export interface Household {
   name: string
   created_at: string
 }
+
+export interface UserProfile {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  nickname: string | null
+  created_at: string
+  updated_at: string
+}

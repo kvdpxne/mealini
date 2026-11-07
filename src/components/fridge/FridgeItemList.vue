@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { toRef } from 'vue'
-import { ShoppingCart, Trash2, Pencil } from 'lucide-vue-next'
-import type { FridgeItem } from '@/types/database.types'
+import {toRef} from 'vue'
+import {Pencil, ShoppingCart, Trash2} from 'lucide-vue-next'
+import type {FridgeItem} from '@/types/database.types'
 import EditableQuantity from './EditableQuantity.vue'
-import { formatRelativeExpiry } from '@/utils/date'
-import { useFridgeItems } from '@/composables/useFridgeItems'
+import SkeletonList from '@/components/shared/SkeletonList.vue'
+import {formatRelativeExpiry} from '@/utils/date'
+import {useFridgeItems} from '@/composables/useFridgeItems'
 
 const props = defineProps<{ items: FridgeItem[]; loading: boolean }>()
 const emit = defineEmits<{
@@ -14,7 +15,7 @@ const emit = defineEmits<{
   (e: 'edit', item: FridgeItem): void
 }>()
 
-const { categorize } = useFridgeItems(toRef(props, 'items'))
+const {categorize} = useFridgeItems(toRef(props, 'items'))
 
 function badgeClass(item: FridgeItem) {
   return `badge--${categorize(item.expiry_date)}`
@@ -22,7 +23,7 @@ function badgeClass(item: FridgeItem) {
 </script>
 
 <template>
-  <div v-if="loading" class="state">Ładowanie...</div>
+  <SkeletonList v-if="loading" :count="3"/>
   <div v-else-if="items.length === 0" class="state">
     Brak produktów spełniających kryteria.
   </div>
@@ -41,13 +42,13 @@ function badgeClass(item: FridgeItem) {
       </div>
       <div class="actions">
         <button title="Edytuj" @click="emit('edit', item)">
-          <Pencil :size="18" />
+          <Pencil :size="18"/>
         </button>
         <button title="Skończyło się – dodaj do zakupów" @click="emit('move-to-shopping', item.id)">
-          <ShoppingCart :size="18" />
+          <ShoppingCart :size="18"/>
         </button>
         <button title="Usuń" @click="emit('delete', item.id)">
-          <Trash2 :size="18" />
+          <Trash2 :size="18"/>
         </button>
       </div>
     </li>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import {storeToRefs} from 'pinia'
 import {PackagePlus} from 'lucide-vue-next'
 import {useShoppingStore} from '@/stores/shopping.store'
@@ -24,6 +24,11 @@ const search = ref('')
 const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
 
 const newItem = ref('')
+const {items, error, loading} = storeToRefs(shoppingStore)
+
+const showBoughtSection = computed(
+  () => bought.value.length > 0 || loading.value,
+)
 
 async function initialFetch() {
   if (authStore.householdId) await shoppingStore.fetchItems(authStore.householdId)
@@ -106,6 +111,7 @@ useRealtimePartnerToast<ShoppingListItem>(
       <h2>Do kupienia <span v-if="toBuy.length" class="count">({{ toBuy.length }})</span></h2>
       <ShoppingItemList
         :items="toBuy"
+        :loading="loading"
         :empty-text="isSearchActive ? 'Brak wyników w liście do kupienia.' : 'Nic do kupienia.'"
         @toggle="handleToggle"
         @delete="handleDelete"
@@ -113,10 +119,10 @@ useRealtimePartnerToast<ShoppingListItem>(
       />
     </section>
 
-    <section v-if="bought.length > 0">
+    <section v-if="showBoughtSection">
       <div class="section-head">
-        <h2>Kupione <span class="count">({{ bought.length }})</span></h2>
-        <div class="bulk-actions">
+        <h2>Kupione <span v-if="bought.length" class="count">({{ bought.length }})</span></h2>
+        <div v-if="bought.length > 0" class="bulk-actions">
           <button class="secondary" :disabled="movingAll" @click="handleMoveAllBought">
             <PackagePlus :size="16"/>
             <span>{{ movingAll ? 'Przenoszenie...' : 'Przenieś do lodówki' }}</span>
@@ -126,6 +132,7 @@ useRealtimePartnerToast<ShoppingListItem>(
       </div>
       <ShoppingItemList
         :items="bought"
+        :loading="loading"
         empty-text=""
         @toggle="handleToggle"
         @delete="handleDelete"

@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import {PackagePlus, Trash2} from 'lucide-vue-next'
 import type {ShoppingListItem} from '@/types/database.types'
+import SkeletonList from '@/components/shared/SkeletonList.vue'
 
-defineProps<{ items: ShoppingListItem[]; emptyText: string }>()
+defineProps<{
+  items: ShoppingListItem[]
+  emptyText: string
+  loading?: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'toggle', id: string): void
@@ -13,7 +18,8 @@ const emit = defineEmits<{
 
 <
 <template>
-  <p v-if="items.length === 0" class="empty">{{ emptyText }}</p>
+  <SkeletonList v-if="loading" :count="3"/>
+  <p v-else-if="items.length === 0" class="empty">{{ emptyText }}</p>
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="{ bought: item.is_bought }">
       <label>

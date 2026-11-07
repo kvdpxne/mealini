@@ -16,7 +16,7 @@ import type {ShoppingListItem} from '@/types/database.types'
 const shoppingStore = useShoppingStore()
 const authStore = useAuthStore()
 const confirm = useConfirmStore()
-const {items, error} = storeToRefs(shoppingStore)
+const {items, error, loading} = storeToRefs(shoppingStore)
 const {run} = useAsyncAction()
 const {run: runMoveAll, pending: movingAll} = useAsyncAction()
 
@@ -24,7 +24,6 @@ const search = ref('')
 const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
 
 const newItem = ref('')
-const {items, error, loading} = storeToRefs(shoppingStore)
 
 const showBoughtSection = computed(
   () => bought.value.length > 0 || loading.value,

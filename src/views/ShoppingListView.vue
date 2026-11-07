@@ -13,6 +13,7 @@ import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
 import type {ShoppingListItem} from '@/types/database.types'
 import {useOnlineStatus} from '@/composables/useOnlineStatus'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 
 const shoppingStore = useShoppingStore()
 const authStore = useAuthStore()
@@ -102,7 +103,7 @@ useRealtimePartnerToast<ShoppingListItem>(
     <h1>Lista zakupów</h1>
 
     <form class="add-form" @submit.prevent="handleAdd">
-      <input v-model="newItem" type="text" placeholder="Co dokupić?" required/>
+      <input v-model="newItem" type="text" placeholder="Co dokupić?" :maxlength="NAME_MAX_LENGTH" required/>
       <button type="submit" :disabled="!isOnline">Dodaj</button>
     </form>
 

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import { UNITS } from '@/lib/units'
+import {UNITS} from '@/lib/units'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
 
-const props = withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })
+const props = withDefaults(defineProps<{ disabled?: boolean }>(), {disabled: false})
 const name = ref('')
 const quantity = ref<number>(1)
 const unit = ref('szt')
@@ -41,7 +42,7 @@ async function handleSubmit() {
 
 <template>
   <form class="add-form" @submit.prevent="handleSubmit">
-    <input v-model="name" type="text" placeholder="Nazwa produktu" required/>
+    <input v-model="name" type="text" placeholder="Nazwa produktu" required :maxlength="NAME_MAX_LENGTH"/>
     <input v-model.number="quantity" type="number" min="0.01" step="0.01" placeholder="Ilość"/>
     <select v-model="unit">
       <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>

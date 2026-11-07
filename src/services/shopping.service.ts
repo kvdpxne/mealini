@@ -1,4 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
+import {NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
 import type {ShoppingListItem} from '@/types/database.types'
 
 export const shoppingService = {
@@ -15,13 +16,39 @@ export const shoppingService = {
   },
 
   async addItem(item: { household_id: string; name: string }): Promise<ShoppingListItem> {
+    const trimmed = item.name.trim()
+    if (trimmed.length === 0) {
+      throw new Error('Nazwa pozycji nie może być pusta.')
+    }
+    if (trimmed.length > NAME_MAX_LENGTH) {
+      throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+    }
+
+    const normalized = normalizeName(trimmed)
+    const {data: existing} = await supabase
+      .from('shopping_list_items')
+      .select('id, name')
+      .eq('household_id', item.household_id)
+      .eq('name_normalized', normalized)
+      .eq('is_bought', false)
+      .maybeSingle()
+
+    if (existing) {
+      throw new Error(`„${existing.name}” już jest na liście zakupów.`)
+    }
+
     const {data, error} = await supabase
       .from('shopping_list_items')
-      .insert(item)
+      .insert({household_id: item.household_id, name: trimmed})
       .select()
       .single()
 
-    if (error) throw new Error(`Nie udało się dodać pozycji: ${error.message}`)
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`„${trimmed}” już jest na liście zakupów.`)
+      }
+      throw new Error(`Nie udało się dodać pozycji: ${error.message}`)
+    }
     return data
   },
 
@@ -33,7 +60,15 @@ export const shoppingService = {
       .select()
       .single()
 
-    if (error) throw new Error(`Nie udało się zaktualizować pozycji: ${error.message}`)
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(
+          'Nie można przywrócić – w „Do kupienia” jest już produkt o tej nazwie. ' +
+          'Usuń go lub zmień nazwę, aby przywrócić tę pozycję.',
+        )
+      }
+      throw new Error(`Nie udało się zaktualizować pozycji: ${error.message}`)
+    }
     return data
   },
 

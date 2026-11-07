@@ -1,4 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
+import {NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
 
 export const fridgeService = {
@@ -13,18 +14,77 @@ export const fridgeService = {
     return data ?? []
   },
 
-  async addItem(item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<FridgeItem> {
+  async addItem(
+    item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'name_normalized'>,
+  ): Promise<FridgeItem> {
+    const trimmed = item.name.trim()
+    if (trimmed.length === 0) {
+      throw new Error('Nazwa produktu nie może być pusta.')
+    }
+    if (trimmed.length > NAME_MAX_LENGTH) {
+      throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+    }
+
+    const normalized = normalizeName(trimmed)
+    const {data: existing} = await supabase
+      .from('fridge_items')
+      .select('id, name')
+      .eq('household_id', item.household_id)
+      .eq('name_normalized', normalized)
+      .maybeSingle()
+
+    if (existing) {
+      throw new Error(`„${existing.name}” już jest w lodówce – zwiększ ilość zamiast dodawać nowy.`)
+    }
+
     const {data, error} = await supabase
       .from('fridge_items')
-      .insert(item)
+      .insert({...item, name: trimmed})
       .select()
       .single()
 
-    if (error) throw new Error(`Nie udało się dodać produktu: ${error.message}`)
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`„${trimmed}” już jest w lodówce.`)
+      }
+      throw new Error(`Nie udało się dodać produktu: ${error.message}`)
+    }
     return data
   },
 
   async updateItem(id: string, updates: Partial<FridgeItem>): Promise<FridgeItem> {
+    if (updates.name !== undefined) {
+      const trimmed = updates.name.trim()
+      if (trimmed.length === 0) {
+        throw new Error('Nazwa produktu nie może być pusta.')
+      }
+      if (trimmed.length > NAME_MAX_LENGTH) {
+        throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+      }
+
+      const {data: current, error: fetchErr} = await supabase
+        .from('fridge_items')
+        .select('household_id')
+        .eq('id', id)
+        .single()
+
+      if (fetchErr || !current) throw new Error('Produkt nie istnieje.')
+
+      const {data: existing} = await supabase
+        .from('fridge_items')
+        .select('id, name')
+        .eq('household_id', current.household_id)
+        .eq('name_normalized', normalizeName(trimmed))
+        .neq('id', id)          // ← kluczowe: wykluczamy siebie
+        .maybeSingle()
+
+      if (existing) {
+        throw new Error(`„${existing.name}” już jest w lodówce.`)
+      }
+
+      updates = {...updates, name: trimmed}
+    }
+
     const {data, error} = await supabase
       .from('fridge_items')
       .update({...updates, updated_at: new Date().toISOString()})
@@ -32,7 +92,12 @@ export const fridgeService = {
       .select()
       .single()
 
-    if (error) throw new Error(`Nie udało się zaktualizować produktu: ${error.message}`)
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('Produkt o tej nazwie już istnieje w lodówce.')
+      }
+      throw new Error(`Nie udało się zaktualizować produktu: ${error.message}`)
+    }
     return data
   },
 

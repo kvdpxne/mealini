@@ -2,6 +2,7 @@
 import {nextTick, ref, watch} from 'vue'
 import {X} from 'lucide-vue-next'
 import {UNITS} from '@/lib/units'
+import { NAME_MAX_LENGTH } from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
 
 type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date'>>
@@ -73,7 +74,7 @@ function handleKeydown(e: KeyboardEvent) {
 
         <label>
           Nazwa
-          <input ref="nameInput" v-model="name" type="text" maxlength="80" required/>
+          <input ref="nameInput" v-model="name" type="text" :maxlength="NAME_MAX_LENGTH" required/>
         </label>
 
         <div class="row">

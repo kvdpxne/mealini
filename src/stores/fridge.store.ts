@@ -53,18 +53,34 @@ export const useFridgeStore = defineStore('fridge', () => {
   }
 
   async function updateItem(id: string, updates: FridgeItemUpdates) {
-    const updated = await fridgeService.updateItem(id, updates)
-    const idx = items.value.findIndex(i => i.id === id)
-    if (idx !== -1) items.value[idx] = updated
+    const previous = items.value.find(i => i.id === id)
+    if (!previous) return
+
+    const optimisticIdx = items.value.findIndex(i => i.id === id)
+    items.value[optimisticIdx] = {...previous, ...updates}
+
+    try {
+      const updated = await fridgeService.updateItem(id, updates)
+      const confirmIdx = items.value.findIndex(i => i.id === id)
+      if (confirmIdx !== -1) items.value[confirmIdx] = updated
+    } catch (e) {
+      const rollbackIdx = items.value.findIndex(i => i.id === id)
+      if (rollbackIdx !== -1) items.value[rollbackIdx] = previous
+      throw e
+    }
   }
 
   async function updateQuantity(id: string, quantity: number) {
     await updateItem(id, {quantity})
   }
 
+  async function updateName(id: string, name: string) {
+    await updateItem(id, {name})
+  }
+
   return {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
-    moveToShopping, updateItem, updateQuantity
+    moveToShopping, updateItem, updateQuantity, updateName
   }
 }, {
   persist: {

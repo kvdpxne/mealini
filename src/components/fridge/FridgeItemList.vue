@@ -2,7 +2,7 @@
 import {toRef} from 'vue'
 import {Pencil, ShoppingCart, Trash2} from 'lucide-vue-next'
 import type {FridgeItem} from '@/types/database.types'
-import EditableQuantity from './EditableQuantity.vue'
+import InlineEdit from '@/components/shared/InlineEdit.vue'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'move-to-shopping', id: string): void
   (e: 'update-quantity', id: string, quantity: number): void
+  (e: 'update-name', id: string, name: string): void
   (e: 'edit', item: FridgeItem): void
 }>()
 
@@ -30,12 +31,23 @@ function badgeClass(item: FridgeItem) {
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="badgeClass(item)">
       <div class="info">
-        <strong>{{ item.name }}</strong>
-        <EditableQuantity
-          :quantity="item.quantity"
-          :unit="item.unit"
+        <InlineEdit
+          :model-value="item.name"
+          type="text"
+          :maxlength="NAME_MAX_LENGTH"
           :disabled="disabled"
-          @update="emit('update-quantity', item.id, $event)"
+          emphasis
+          @update="emit('update-name', item.id, $event as string)"
+        />
+        <InlineEdit
+          :model-value="item.quantity"
+          type="number"
+          :min="0.01"
+          :step="0.01"
+          :suffix="item.unit"
+          :disabled="disabled"
+          variant="muted"
+          @update="emit('update-quantity', item.id, $event as number)"
         />
         <span v-if="item.expiry_date" class="expiry">
           {{ formatRelativeExpiry(item.expiry_date) }}

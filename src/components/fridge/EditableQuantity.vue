@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {nextTick, ref} from 'vue'
 
-const props = defineProps<{ quantity: number; unit: string }>()
+const props = defineProps<{ quantity: number; unit: string; disabled?: boolean }>()
 const emit = defineEmits<{ (e: 'update', value: number): void }>()
 
 const editing = ref(false)
@@ -9,6 +9,7 @@ const draft = ref(props.quantity)
 const inputEl = ref<HTMLInputElement | null>(null)
 
 async function startEdit() {
+  if (props.disabled) return
   draft.value = props.quantity
   editing.value = true
   await nextTick()

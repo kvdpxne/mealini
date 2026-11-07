@@ -12,10 +12,12 @@ import ShoppingFilters from '@/components/shopping/ShoppingFilters.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
 import type {ShoppingListItem} from '@/types/database.types'
+import {useOnlineStatus} from '@/composables/useOnlineStatus'
 
 const shoppingStore = useShoppingStore()
 const authStore = useAuthStore()
 const confirm = useConfirmStore()
+const {isOnline} = useOnlineStatus()
 const {items, error, loading} = storeToRefs(shoppingStore)
 const {run} = useAsyncAction()
 const {run: runMoveAll, pending: movingAll} = useAsyncAction()
@@ -85,7 +87,12 @@ async function handleMoveAllBought() {
   )
 }
 
-onMounted(initialFetch)
+onMounted(async () => {
+  if (isOnline.value) {
+    await initialFetch()
+  }
+})
+
 useRealtimePartnerToast<ShoppingListItem>(
   'shopping_list_items',
   (actor, name) => `${actor} dodał(a) do zakupów: ${name}`,
@@ -99,7 +106,7 @@ useRealtimePartnerToast<ShoppingListItem>(
 
     <form class="add-form" @submit.prevent="handleAdd">
       <input v-model="newItem" type="text" placeholder="Co dokupić?" required/>
-      <button type="submit">Dodaj</button>
+      <button type="submit" :disabled="!isOnline">Dodaj</button>
     </form>
 
     <ShoppingFilters v-model:search="search"/>
@@ -111,6 +118,7 @@ useRealtimePartnerToast<ShoppingListItem>(
       <ShoppingItemList
         :items="toBuy"
         :loading="loading"
+        :disabled="!isOnline"
         :empty-text="isSearchActive ? 'Brak wyników w liście do kupienia.' : 'Nic do kupienia.'"
         @toggle="handleToggle"
         @delete="handleDelete"
@@ -122,11 +130,11 @@ useRealtimePartnerToast<ShoppingListItem>(
       <div class="section-head">
         <h2>Kupione <span v-if="bought.length" class="count">({{ bought.length }})</span></h2>
         <div v-if="bought.length > 0" class="bulk-actions">
-          <button class="secondary" :disabled="movingAll" @click="handleMoveAllBought">
+          <button class="secondary" :disabled="!isOnline || movingAll" @click="handleMoveAllBought">
             <PackagePlus :size="16"/>
             <span>{{ movingAll ? 'Przenoszenie...' : 'Przenieś do lodówki' }}</span>
           </button>
-          <button class="secondary" @click="handleClear">Wyczyść</button>
+          <button class="secondary" :disabled="!isOnline" @click="handleClear">Wyczyść</button>
         </div>
       </div>
       <ShoppingItemList

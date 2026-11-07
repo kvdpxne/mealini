@@ -7,6 +7,7 @@ import {useAuthStore} from '@/stores/auth.store'
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
 
+const props = withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })
 const name = ref('')
 const quantity = ref<number>(1)
 const unit = ref('szt')
@@ -46,7 +47,7 @@ async function handleSubmit() {
       <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
     </select>
     <input v-model="expiryDate" type="date" title="Data ważności (opcjonalnie)"/>
-    <button type="submit" :disabled="submitting">
+    <button type="submit" :disabled="submitting || disabled">
       {{ submitting ? 'Dodawanie...' : 'Dodaj do lodówki' }}
     </button>
     <p v-if="localError" class="error">{{ localError }}</p>

@@ -58,4 +58,10 @@ export const useFridgeStore = defineStore('fridge', () => {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
     moveToShopping, updateItem, updateQuantity
   }
+}, {
+  persist: {
+    key: 'fridge-cache-v1',
+    storage: localStorage,
+    pick: ['items'],
+  },
 })

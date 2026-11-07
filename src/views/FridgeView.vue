@@ -12,11 +12,13 @@ import AddFridgeItemForm from '@/components/fridge/AddFridgeItemForm.vue'
 import EditFridgeItemModal from '@/components/fridge/EditFridgeItemModal.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
+import {useOnlineStatus} from '@/composables/useOnlineStatus'
 import type {FridgeItem} from '@/types/database.types'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
 const confirm = useConfirmStore()
+const {isOnline} = useOnlineStatus()
 const {items, loading, error} = storeToRefs(fridgeStore)
 const {run} = useAsyncAction()
 
@@ -66,7 +68,12 @@ async function handleUpdateQuantity(id: string, quantity: number) {
   await run(() => fridgeStore.updateQuantity(id, quantity))
 }
 
-onMounted(initialFetch)
+onMounted(async () => {
+  if (isOnline.value) {
+    await initialFetch()
+  }
+})
+
 useRealtimePartnerToast<FridgeItem>(
   'fridge_items',
   (actor, name) => `${actor} dodał(a) do lodówki: ${name}`,
@@ -77,12 +84,13 @@ useRealtimePartnerToast<FridgeItem>(
 <template>
   <div class="fridge-view">
     <h1>Moja lodówka</h1>
-    <AddFridgeItemForm/>
+    <AddFridgeItemForm :disabled="!isOnline"/>
     <ErrorBanner v-if="error" :message="error" @dismiss="fridgeStore.clearError"/>
     <FridgeFilters v-model:search="search" v-model:category="category"/>
     <FridgeItemList
       :items="filteredSorted"
       :loading="loading"
+      :disabled="!isOnline"
       @delete="handleDelete"
       @move-to-shopping="handleMoveToShopping"
       @update-quantity="handleUpdateQuantity"

@@ -7,6 +7,7 @@ defineProps<{
   items: ShoppingListItem[]
   emptyText: string
   loading?: boolean
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,18 +24,19 @@ const emit = defineEmits<{
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="{ bought: item.is_bought }">
       <label>
-        <input type="checkbox" :checked="item.is_bought" @change="emit('toggle', item.id)"/>
+        <input
+          type="checkbox"
+          :checked="item.is_bought"
+          :disabled="disabled"
+          @change="emit('toggle', item.id)"
+        />
         <span>{{ item.name }}</span>
       </label>
       <div class="actions">
-        <button
-          class="move"
-          title="Przenieś do lodówki"
-          @click="emit('move-to-fridge', item.id)"
-        >
+        <button class="move" title="Przenieś do lodówki" :disabled="disabled" @click="emit('move-to-fridge', item.id)">
           <PackagePlus :size="18"/>
         </button>
-        <button title="Usuń" @click="emit('delete', item.id)">
+        <button title="Usuń" :disabled="disabled" @click="emit('delete', item.id)">
           <Trash2 :size="18"/>
         </button>
       </div>

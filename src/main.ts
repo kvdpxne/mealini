@@ -1,11 +1,14 @@
 import {createApp} from 'vue'
 import {createPinia} from 'pinia'
 import App from './App.vue'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import router from './router'
 import {useToastStore} from './stores/toast.store'
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+app.use(pinia)
 app.use(router)
 
 app.config.errorHandler = (err, _instance, info) => {
@@ -26,7 +29,8 @@ window.addEventListener('unhandledrejection', (event) => {
       'error',
       6000,
     )
-  } catch {}
+  } catch {
+  }
 })
 
 app.mount('#app')

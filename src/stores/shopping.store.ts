@@ -72,4 +72,10 @@ export const useShoppingStore = defineStore('shopping', () => {
     fetchItems, clearError, addItem, toggleBought, deleteItem, clearBought,
     moveToFridge, moveAllBoughtToFridge
   }
+}, {
+  persist: {
+    key: 'shopping-cache-v1',
+    storage: localStorage,
+    pick: ['items'],
+  },
 })

@@ -7,7 +7,7 @@ import SkeletonList from '@/components/shared/SkeletonList.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
 
-const props = defineProps<{ items: FridgeItem[]; loading: boolean }>()
+const props = defineProps<{ items: FridgeItem[]; loading: boolean; disabled?: boolean }>()
 const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'move-to-shopping', id: string): void
@@ -34,6 +34,7 @@ function badgeClass(item: FridgeItem) {
         <EditableQuantity
           :quantity="item.quantity"
           :unit="item.unit"
+          :disabled="disabled"
           @update="emit('update-quantity', item.id, $event)"
         />
         <span v-if="item.expiry_date" class="expiry">
@@ -41,13 +42,14 @@ function badgeClass(item: FridgeItem) {
         </span>
       </div>
       <div class="actions">
-        <button title="Edytuj" @click="emit('edit', item)">
+        <button title="Edytuj" :disabled="disabled" @click="emit('edit', item)">
           <Pencil :size="18"/>
         </button>
-        <button title="Skończyło się – dodaj do zakupów" @click="emit('move-to-shopping', item.id)">
+        <button title="Skończyło się – dodaj do zakupów" :disabled="disabled"
+                @click="emit('move-to-shopping', item.id)">
           <ShoppingCart :size="18"/>
         </button>
-        <button title="Usuń" @click="emit('delete', item.id)">
+        <button title="Usuń" :disabled="disabled" @click="emit('delete', item.id)">
           <Trash2 :size="18"/>
         </button>
       </div>

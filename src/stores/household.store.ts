@@ -1,17 +1,16 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import {
-  householdService,
-  type HouseholdDetails,
-  type HouseholdMember,
-} from '@/services/household.service'
-import { useAuthStore } from './auth.store'
+import {defineStore} from 'pinia'
+import {ref, watch} from 'vue'
+import {type HouseholdDetails, type HouseholdMember, householdService,} from '@/services/household.service'
+import {useAuthStore} from './auth.store'
 
 export const useHouseholdStore = defineStore('household', () => {
   const details = ref<HouseholdDetails | null>(null)
   const members = ref<HouseholdMember[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const loadedId = ref<string | null>(null)
+
+  const authStore = useAuthStore()
 
   async function create(name: string): Promise<string> {
     loading.value = true
@@ -43,18 +42,23 @@ export const useHouseholdStore = defineStore('household', () => {
     }
   }
 
-  async function fetchDetails(householdId: string) {
+  async function fetchDetails(householdId: string, opts: { force?: boolean } = {}) {
+    if (!opts.force && loadedId.value === householdId) {
+      return
+    }
     loading.value = true
     error.value = null
     try {
       details.value = await householdService.getDetails(householdId)
       members.value = await householdService.getMembers(householdId)
+      loadedId.value = householdId
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Nieznany błąd'
     } finally {
       loading.value = false
     }
   }
+
 
   async function rename(householdId: string, name: string) {
     await householdService.rename(householdId, name)
@@ -73,6 +77,20 @@ export const useHouseholdStore = defineStore('household', () => {
     members.value = []
     await useAuthStore().refreshHouseholdId()
   }
+
+  watch(
+    () => authStore.householdId,
+    async (id) => {
+      if (id) {
+        await fetchDetails(id)
+      } else {
+        details.value = null
+        members.value = []
+        loadedId.value = null
+      }
+    },
+    {immediate: true},
+  )
 
   return {
     details, members, loading, error,

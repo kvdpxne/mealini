@@ -5,13 +5,13 @@ import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
-import {useRealtimeSubscription} from '@/composables/useRealtimeSubscription'
 import {type CategoryFilter, useFridgeItems} from '@/composables/useFridgeItems'
 import FridgeFilters from '@/components/fridge/FridgeFilters.vue'
 import FridgeItemList from '@/components/fridge/FridgeItemList.vue'
 import AddFridgeItemForm from '@/components/fridge/AddFridgeItemForm.vue'
 import EditFridgeItemModal from '@/components/fridge/EditFridgeItemModal.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
+import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
 import type {FridgeItem} from '@/types/database.types'
 
 const fridgeStore = useFridgeStore()
@@ -67,7 +67,11 @@ async function handleUpdateQuantity(id: string, quantity: number) {
 }
 
 onMounted(initialFetch)
-useRealtimeSubscription('fridge_items', realtimeRefresh)
+useRealtimePartnerToast<FridgeItem>(
+  'fridge_items',
+  (actor, name) => `${actor} dodał(a) do lodówki: ${name}`,
+  {onChange: realtimeRefresh},
+)
 </script>
 
 <template>

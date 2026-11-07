@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {Check, Copy, LogOut, RefreshCw} from 'lucide-vue-next'
 import {storeToRefs} from 'pinia'
@@ -23,13 +23,6 @@ const copied = ref(false)
 const regenerating = ref(false)
 
 const isLastMember = computed(() => members.value.length <= 1)
-
-async function load() {
-  if (authStore.householdId) {
-    await householdStore.fetchDetails(authStore.householdId)
-    if (details.value) nameDraft.value = details.value.name
-  }
-}
 
 async function handleRename() {
   if (!authStore.householdId || !nameDraft.value.trim()) return
@@ -85,7 +78,13 @@ async function handleLeave() {
   await router.push('/onboarding')
 }
 
-onMounted(load)
+watch(
+  () => householdStore.details,
+  (d) => {
+    if (d) nameDraft.value = d.name
+  },
+  {immediate: true},
+)
 </script>
 
 <template>

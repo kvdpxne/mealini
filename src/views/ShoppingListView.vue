@@ -6,11 +6,12 @@ import {useShoppingStore} from '@/stores/shopping.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
-import {useRealtimeSubscription} from '@/composables/useRealtimeSubscription'
 import {useShoppingItems} from '@/composables/useShoppingItems'
 import ShoppingItemList from '@/components/shopping/ShoppingItemList.vue'
 import ShoppingFilters from '@/components/shopping/ShoppingFilters.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
+import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
+import type {ShoppingListItem} from '@/types/database.types'
 
 const shoppingStore = useShoppingStore()
 const authStore = useAuthStore()
@@ -81,7 +82,11 @@ async function handleMoveAllBought() {
 }
 
 onMounted(initialFetch)
-useRealtimeSubscription('shopping_list_items', realtimeRefresh)
+useRealtimePartnerToast<ShoppingListItem>(
+  'shopping_list_items',
+  (actor, name) => `${actor} dodał(a) do zakupów: ${name}`,
+  {onChange: realtimeRefresh},
+)
 </script>
 
 <template>

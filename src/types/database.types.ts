@@ -5,6 +5,7 @@ export interface FridgeItem {
   quantity: number
   unit: string
   expiry_date: string | null
+  created_by: string | null
   created_at: string
   updated_at: string
 }
@@ -14,6 +15,7 @@ export interface ShoppingListItem {
   household_id: string
   name: string
   is_bought: boolean
+  created_by: string | null
   created_at: string
 }
 

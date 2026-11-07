@@ -13,7 +13,7 @@ export const fridgeService = {
     return data ?? []
   },
 
-  async addItem(item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at'>): Promise<FridgeItem> {
+  async addItem(item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<FridgeItem> {
     const {data, error} = await supabase
       .from('fridge_items')
       .insert(item)

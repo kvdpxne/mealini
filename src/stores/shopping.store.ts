@@ -47,13 +47,32 @@ export const useShoppingStore = defineStore('shopping', () => {
   }
 
   async function deleteItem(id: string) {
-    await shoppingService.deleteItem(id)
-    items.value = items.value.filter(i => i.id !== id)
+    const idx = items.value.findIndex(i => i.id === id)
+    if (idx === -1) return
+    const removed = items.value[idx]
+    items.value.splice(idx, 1)
+    try {
+      await shoppingService.deleteItem(id)
+    } catch (e) {
+      items.value.splice(idx, 0, removed)
+      throw e
+    }
   }
 
   async function clearBought(householdId: string) {
-    await shoppingService.clearBought(householdId)
+    const removed = items.value.filter(i => i.is_bought)
+    if (removed.length === 0) return
     items.value = items.value.filter(i => !i.is_bought)
+    try {
+      await shoppingService.clearBought(householdId)
+    } catch (e) {
+      const currentIds = new Set(items.value.map(i => i.id))
+      const toRestore = removed.filter(i => !currentIds.has(i.id))
+      if (toRestore.length > 0) {
+        items.value = [...items.value, ...toRestore]
+      }
+      throw e
+    }
   }
 
   async function moveToFridge(id: string) {

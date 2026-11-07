@@ -35,8 +35,16 @@ export const useFridgeStore = defineStore('fridge', () => {
   }
 
   async function deleteItem(id: string) {
-    await fridgeService.deleteItem(id)
-    items.value = items.value.filter(i => i.id !== id)
+    const idx = items.value.findIndex(i => i.id === id)
+    if (idx === -1) return
+    const removed = items.value[idx]
+    items.value.splice(idx, 1)
+    try {
+      await fridgeService.deleteItem(id)
+    } catch (e) {
+      items.value.splice(idx, 0, removed)
+      throw e
+    }
   }
 
   async function moveToShopping(id: string) {

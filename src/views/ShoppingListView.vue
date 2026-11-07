@@ -57,17 +57,14 @@ async function handleToggle(id: string) {
 async function handleDelete(id: string) {
   const ok = await confirm.ask('Usunąć tę pozycję?', 'Usuń pozycję')
   if (!ok) return
-  await run(() => shoppingStore.deleteItem(id), {success: 'Usunięto z listy'})
+  await run(() => shoppingStore.deleteItem(id))
 }
 
 async function handleClear() {
   if (!authStore.householdId) return
   const ok = await confirm.ask('Usunąć wszystkie kupione pozycje?', 'Wyczyść listę')
   if (!ok) return
-  await run(
-    () => shoppingStore.clearBought(authStore.householdId!),
-    {success: 'Wyczyszczono kupione'},
-  )
+  await run(() => shoppingStore.clearBought(authStore.householdId!))
 }
 
 async function handleMoveToFridge(id: string) {

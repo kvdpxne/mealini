@@ -54,7 +54,7 @@ async function handleSave(id: string, updates: Parameters<typeof fridgeStore.upd
 async function handleDelete(id: string) {
   const ok = await confirm.ask('Usunąć ten produkt z lodówki?', 'Usuń produkt')
   if (!ok) return
-  await run(() => fridgeStore.deleteItem(id), {success: 'Produkt usunięty'})
+  await run(() => fridgeStore.deleteItem(id))
 }
 
 async function handleMoveToShopping(id: string) {

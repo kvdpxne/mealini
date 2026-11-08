@@ -112,8 +112,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     session, user, householdId, initialized, loading,
-    isAuthenticated,
+    isAuthenticated, sessionEndedReason,
     initialize, signIn, signUp, signOut, refreshHouseholdId,
-    resetPassword, updatePassword, updateEmail
+    resetPassword, updatePassword, updateEmail,
+    clearSessionEndedReason
   }
 })

@@ -29,7 +29,7 @@ export const useFridgeStore = defineStore('fridge', () => {
     error.value = null
   }
 
-  async function addItem(item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at'>) {
+  async function addItem(item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by'>) {
     const newItem = await fridgeService.addItem(item)
     items.value.push(newItem)
   }

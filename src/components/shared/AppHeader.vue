@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {LogOut, Refrigerator, Store} from 'lucide-vue-next'
+import {LogOut, Refrigerator} from 'lucide-vue-next'
 import {RouterLink, useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
 import {useProfileStore} from '@/stores/profile.store'

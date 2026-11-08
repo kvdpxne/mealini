@@ -6,6 +6,7 @@ import InlineEdit from '@/components/shared/InlineEdit.vue'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 
 const props = defineProps<{ items: FridgeItem[]; loading: boolean; disabled?: boolean }>()
 const emit = defineEmits<{

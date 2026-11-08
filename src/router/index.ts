@@ -11,6 +11,8 @@ const router = createRouter({
     {path: '/household', component: () => import('@/views/HouseholdSettingsView.vue')},
     {path: '/onboarding', component: () => import('@/views/OnboardingView.vue')},
     {path: '/shopping', component: () => import('@/views/ShoppingListView.vue')},
+    {path: '/stores', component: () => import('@/views/StoresListView.vue')},
+    {path: '/stores/:id', component: () => import('@/views/StoreDetailView.vue')},
     {path: '/', component: () => import('@/views/FridgeView.vue')},
   ],
 })

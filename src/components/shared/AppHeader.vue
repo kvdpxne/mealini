@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {LogOut, Refrigerator} from 'lucide-vue-next'
+import {LogOut, Refrigerator, Store} from 'lucide-vue-next'
 import {RouterLink, useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
 import {useProfileStore} from '@/stores/profile.store'
@@ -26,6 +26,7 @@ async function handleLogout() {
       <nav class="nav">
         <RouterLink to="/" active-class="active">Lodówka</RouterLink>
         <RouterLink to="/shopping" active-class="active">Zakupy</RouterLink>
+        <RouterLink to="/stores" active-class="active">Sklepy</RouterLink>
         <RouterLink to="/household" active-class="active">Dom</RouterLink>
         <RouterLink to="/account" active-class="active">Konto</RouterLink>
       </nav>

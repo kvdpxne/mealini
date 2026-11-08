@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import {Home, Refrigerator, ShoppingCart, User} from 'lucide-vue-next'
+import {Home, Refrigerator, ShoppingCart, User, Store} from 'lucide-vue-next'
 import {RouterLink} from 'vue-router'
 
 const items = [
   {to: '/', label: 'Lodówka', icon: Refrigerator, exact: true},
   {to: '/shopping', label: 'Zakupy', icon: ShoppingCart, exact: false},
+  { to: '/stores', label: 'Sklepy', icon: Store, exact: false },
   {to: '/household', label: 'Dom', icon: Home, exact: false},
   {to: '/account', label: 'Konto', icon: User, exact: false},
 ] as const

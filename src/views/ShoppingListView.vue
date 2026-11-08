@@ -93,11 +93,11 @@ watch(
 
 async function handleAdd() {
   if (!authStore.householdId || !newItem.value.trim()) return
-  const result = await run(
+  await run(
     () => shoppingStore.addItem(authStore.householdId!, newItem.value),
     {success: 'Dodano do listy'},
   )
-  if (result !== undefined && preferences.value.clearInputAfterAdd) {
+  if (preferences.value.clearInputAfterAdd) {
     newItem.value = ''
   }
 }

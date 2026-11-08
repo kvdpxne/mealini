@@ -35,6 +35,11 @@ export function useShoppingLocationGroups(
       }
     }
 
+    const byName = (a: ShoppingListItem, b: ShoppingListItem) =>
+      a.name.localeCompare(b.name, 'pl')
+    for (const arr of byZone.values()) arr.sort(byName)
+    unassigned.sort(byName)
+
     const result: ZoneGroup[] = zones.value
       .map(zone => ({zone, items: byZone.get(zone.id) ?? []}))
       .filter(g => g.items.length > 0)

@@ -2,6 +2,7 @@
 import {computed, onMounted, ref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {MapPin, PackagePlus, Store as StoreIcon} from 'lucide-vue-next'
+import {RouterLink} from 'vue-router'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useStoresStore} from '@/stores/stores.store'
@@ -11,11 +12,13 @@ import {useRealtimeSubscription} from '@/composables/useRealtimeSubscription'
 import {useShoppingItems} from '@/composables/useShoppingItems'
 import {useShoppingLocationGroups} from '@/composables/useShoppingLocationGroups'
 import {useSelectedStore} from '@/composables/useSelectedStore'
+import {useRouteSortPreference} from '@/composables/useRouteSortPreference'
 import {useOnlineStatus} from '@/composables/useOnlineStatus'
 import {NAME_MAX_LENGTH} from '@/lib/validation'
 import ShoppingItemList from '@/components/shopping/ShoppingItemList.vue'
 import ShoppingFilters from '@/components/shopping/ShoppingFilters.vue'
 import ZoneSelect from '@/components/shopping/ZoneSelect.vue'
+import RouteSortToggle from '@/components/shopping/RouteSortToggle.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 
 const shoppingStore = useShoppingStore()
@@ -29,12 +32,12 @@ const {run} = useAsyncAction()
 const {run: runMoveAll, pending: movingAll} = useAsyncAction()
 
 const {selectedStoreId, set: setSelectedStore} = useSelectedStore()
+const {isEnabled, setEnabled} = useRouteSortPreference()
 const search = ref('')
 const newItem = ref('')
 
 const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
 
-// Grupowanie po strefach działa tylko dla wybranego sklepu
 const activeStoreId = computed(() => {
   if (!selectedStoreId.value) return null
   return stores.value.some(s => s.id === selectedStoreId.value) ? selectedStoreId.value : null
@@ -43,9 +46,21 @@ const activeStore = computed(() =>
   activeStoreId.value ? stores.value.find(s => s.id === activeStoreId.value) ?? null : null,
 )
 
+const routeSortEnabled = computed(() =>
+  activeStoreId.value ? isEnabled(activeStoreId.value) : false,
+)
+const useGroupedView = computed(
+  () => activeStoreId.value !== null && zones.value.length > 0 && routeSortEnabled.value,
+)
+
 const {groups, zoneIdFor} = useShoppingLocationGroups(toBuy, zones, locations)
 
 const showBoughtSection = computed(() => bought.value.length > 0 || loading.value)
+
+function handleToggleRouteSort(enabled: boolean) {
+  if (!activeStoreId.value) return
+  setEnabled(activeStoreId.value, enabled)
+}
 
 async function initialFetch() {
   if (!authStore.householdId) return
@@ -112,7 +127,7 @@ async function handleMoveAllBought() {
   )
 }
 
-async function handleSetZone(itemId: string, itemName: string, zoneId: string | null) {
+async function handleSetZone(itemName: string, zoneId: string | null) {
   if (!authStore.householdId || !activeStoreId.value) return
   await run(() =>
     storesStore.setProductLocation(authStore.householdId!, activeStoreId.value!, itemName, zoneId),
@@ -145,6 +160,23 @@ useRealtimeSubscription('product_locations', () => {
       <RouterLink v-if="!stores.length" to="/stores" class="manage-link">Dodaj sklep</RouterLink>
     </div>
 
+    <div v-if="activeStore" class="route-sort-bar">
+      <RouteSortToggle
+        :model-value="routeSortEnabled"
+        :disabled="zones.length === 0"
+        @update:model-value="handleToggleRouteSort"
+      >
+        Sortuj po trasie sklepu
+      </RouteSortToggle>
+      <RouterLink
+        v-if="zones.length === 0"
+        :to="`/stores/${activeStore.id}`"
+        class="hint-link"
+      >
+        Dodaj strefy →
+      </RouterLink>
+    </div>
+
     <details v-if="activeStore && currentMapUrl" class="map-panel">
       <summary>
         <MapPin :size="14"/>
@@ -165,7 +197,7 @@ useRealtimeSubscription('product_locations', () => {
     <section>
       <h2>Do kupienia <span v-if="toBuy.length" class="count">({{ toBuy.length }})</span></h2>
 
-      <template v-if="activeStore">
+      <template v-if="useGroupedView">
         <div v-for="group in groups" :key="group.zone?.id ?? 'unassigned'" class="zone-group">
           <h3 class="zone-heading">
             {{ group.zone?.name ?? 'Bez przypisania' }}
@@ -182,7 +214,7 @@ useRealtimeSubscription('product_locations', () => {
                   :zones="zones"
                   :value="zoneIdFor(item)"
                   :disabled="!isOnline"
-                  @change="handleSetZone(item.id, item.name, $event)"
+                  @change="handleSetZone(item.name, $event)"
                 />
                 <button class="icon-btn" title="Usuń" :disabled="!isOnline" @click="handleDelete(item.id)">🗑</button>
               </div>
@@ -255,7 +287,7 @@ useRealtimeSubscription('product_locations', () => {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .store-select {
@@ -270,6 +302,26 @@ useRealtimeSubscription('product_locations', () => {
 .manage-link {
   font-size: 0.8rem;
   color: #0a7;
+  text-decoration: none;
+}
+
+.route-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.hint-link {
+  font-size: 0.8rem;
+  color: #0a7;
+  text-decoration: none;
+}
+
+.hint-link:hover {
+  text-decoration: underline;
 }
 
 .map-panel {
@@ -318,6 +370,7 @@ useRealtimeSubscription('product_locations', () => {
 
 .add-form button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .section-head {
@@ -406,6 +459,11 @@ useRealtimeSubscription('product_locations', () => {
   cursor: pointer;
   font-size: 1rem;
   padding: 0.25rem;
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .empty {

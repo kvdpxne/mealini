@@ -8,7 +8,6 @@ import {useAuthStore} from '@/stores/auth.store'
 import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
-import {formatRelativeExpiry} from '@/utils/date'
 import {displayName} from '@/utils/displayName'
 
 const householdStore = useHouseholdStore()
@@ -129,7 +128,7 @@ watch(
             <strong>{{ displayName(m) }}</strong>
             <span v-if="m.user_id === authStore.user?.id" class="badge-you">Ty</span>
           </div>
-          <span class="joined">dołączył(a) {{ formatRelativeExpiry(m.joined_at) }}</span>
+          <span class="joined">dołączył(a) {{ new Date(m.joined_at).toLocaleDateString('pl-PL') }}</span>
         </li>
       </ul>
     </section>

@@ -4,9 +4,11 @@ import {UNITS} from '@/lib/units'
 import {NAME_MAX_LENGTH} from '@/lib/validation'
 import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
+import {useUserPreferences} from '@/composables/useUserPreferences'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
+const {preferences} = useUserPreferences()
 
 const props = withDefaults(defineProps<{ disabled?: boolean }>(), {disabled: false})
 const name = ref('')
@@ -28,10 +30,12 @@ async function handleSubmit() {
       unit: unit.value,
       expiry_date: expiryDate.value || null,
     })
-    name.value = ''
-    quantity.value = 1
-    unit.value = 'szt'
-    expiryDate.value = ''
+    if (preferences.value.clearInputAfterAdd) {
+      name.value = ''
+      quantity.value = 1
+      unit.value = 'szt'
+      expiryDate.value = ''
+    }
   } catch (e) {
     localError.value = e instanceof Error ? e.message : 'Błąd dodawania'
   } finally {

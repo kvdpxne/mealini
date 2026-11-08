@@ -18,8 +18,9 @@ import {NAME_MAX_LENGTH} from '@/lib/validation'
 import ShoppingItemList from '@/components/shopping/ShoppingItemList.vue'
 import ShoppingFilters from '@/components/shopping/ShoppingFilters.vue'
 import ZoneSelect from '@/components/shopping/ZoneSelect.vue'
-import RouteSortToggle from '@/components/shopping/RouteSortToggle.vue'
+import ToggleSwitch from '@/components/shared/ToggleSwitch.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
+import {useUserPreferences} from '@/composables/useUserPreferences'
 
 const shoppingStore = useShoppingStore()
 const storesStore = useStoresStore()
@@ -31,6 +32,7 @@ const {isOnline} = useOnlineStatus()
 const {run} = useAsyncAction()
 const {run: runMoveAll, pending: movingAll} = useAsyncAction()
 
+const {preferences} = useUserPreferences()
 const {selectedStoreId, set: setSelectedStore} = useSelectedStore()
 const {isEnabled, setEnabled} = useRouteSortPreference()
 const search = ref('')
@@ -95,7 +97,9 @@ async function handleAdd() {
     () => shoppingStore.addItem(authStore.householdId!, newItem.value),
     {success: 'Dodano do listy'},
   )
-  if (result !== undefined) newItem.value = ''
+  if (result !== undefined && preferences.value.clearInputAfterAdd) {
+    newItem.value = ''
+  }
 }
 
 async function handleToggle(id: string) {
@@ -161,13 +165,13 @@ useRealtimeSubscription('product_locations', () => {
     </div>
 
     <div v-if="activeStore" class="route-sort-bar">
-      <RouteSortToggle
+      <ToggleSwitch
         :model-value="routeSortEnabled"
         :disabled="zones.length === 0"
         @update:model-value="handleToggleRouteSort"
       >
         Sortuj po trasie sklepu
-      </RouteSortToggle>
+      </ToggleSwitch>
       <RouterLink
         v-if="zones.length === 0"
         :to="`/stores/${activeStore.id}`"

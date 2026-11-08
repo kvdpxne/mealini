@@ -1,13 +1,18 @@
 import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
-import type {Session, User} from '@supabase/supabase-js'
+import type {AuthChangeEvent, Session, User} from '@supabase/supabase-js'
 import {authService} from '@/services/auth.service'
+
+export type SessionEndReason = 'voluntary' | 'expired' | null
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
   const householdId = ref<string | null>(null)
   const initialized = ref(false)
   const loading = ref(false)
+
+  const sessionEndedReason = ref<SessionEndReason>(null)
+  const lastVoluntarySignOutAt = ref<number | null>(null)
 
   const user = computed<User | null>(() => session.value?.user ?? null)
   const isAuthenticated = computed(() => session.value !== null)
@@ -20,11 +25,17 @@ export const useAuthStore = defineStore('auth', () => {
       householdId.value = await authService.getCurrentUserHouseholdId()
     }
 
-    authService.onAuthStateChange(async (newSession) => {
+    authService.onAuthStateChange(async (event: AuthChangeEvent, newSession: Session | null) => {
       session.value = newSession
       householdId.value = newSession
         ? await authService.getCurrentUserHouseholdId()
         : null
+
+      if (event === 'SIGNED_OUT') {
+        const at = lastVoluntarySignOutAt.value
+        const isVoluntary = at !== null && Date.now() - at < 3000
+        sessionEndedReason.value = isVoluntary ? 'voluntary' : 'expired'
+      }
     })
 
     initialized.value = true
@@ -52,9 +63,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function signOut() {
-    await authService.signOut()
-    session.value = null
-    householdId.value = null
+    // Znacznik czasu – listener sprawdzi go, gdy przyjdzie SIGNED_OUT
+    lastVoluntarySignOutAt.value = Date.now()
+    loading.value = true
+    try {
+      await authService.signOut()
+    } finally {
+      session.value = null
+      householdId.value = null
+      loading.value = false
+    }
+  }
+
+  function clearSessionEndedReason() {
+    sessionEndedReason.value = null
   }
 
   async function refreshHouseholdId() {

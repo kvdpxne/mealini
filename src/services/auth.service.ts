@@ -1,5 +1,5 @@
 import {supabase} from './../lib/supabaseClient'
-import type {Session} from '@supabase/supabase-js'
+import type {AuthChangeEvent, Session} from '@supabase/supabase-js'
 
 export const authService = {
   async signIn(email: string, password: string): Promise<Session | null> {
@@ -24,9 +24,11 @@ export const authService = {
     return session
   },
 
-  onAuthStateChange(callback: (session: Session | null) => void) {
-    const {data} = supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session)
+  onAuthStateChange(
+    callback: (event: AuthChangeEvent, session: Session | null) => void,
+  ) {
+    const {data} = supabase.auth.onAuthStateChange((event, session) => {
+      callback(event, session)
     })
     return () => data.subscription.unsubscribe()
   },
@@ -48,17 +50,17 @@ export const authService = {
 
   async resetPassword(email: string): Promise<void> {
     const redirectTo = `${window.location.origin}/reset-password`
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    const {error} = await supabase.auth.resetPasswordForEmail(email, {redirectTo})
     if (error) throw new Error(`Nie udało się wysłać linku: ${error.message}`)
   },
 
   async updatePassword(newPassword: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    const {error} = await supabase.auth.updateUser({password: newPassword})
     if (error) throw new Error(`Nie udało się zmienić hasła: ${error.message}`)
   },
 
   async updateEmail(newEmail: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ email: newEmail })
+    const {error} = await supabase.auth.updateUser({email: newEmail})
     if (error) throw new Error(`Nie udało się zmienić adresu e-mail: ${error.message}`)
   },
 }

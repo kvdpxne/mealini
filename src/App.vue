@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import {onMounted, watch} from 'vue'
+import {useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
 import {useFridgeStore} from '@/stores/fridge.store'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useOnlineStatus} from '@/composables/useOnlineStatus'
+import {useToastStore} from '@/stores/toast.store'
 import AppHeader from '@/components/shared/AppHeader.vue'
 import BottomNav from '@/components/shared/BottomNav.vue'
 import OfflineBanner from '@/components/shared/OfflineBanner.vue'
@@ -14,6 +16,8 @@ import ErrorBoundary from '@/components/shared/ErrorBoundary.vue'
 const authStore = useAuthStore()
 const fridgeStore = useFridgeStore()
 const shoppingStore = useShoppingStore()
+const toast = useToastStore()
+const router = useRouter()
 const {isOnline} = useOnlineStatus()
 
 onMounted(() => authStore.initialize())
@@ -25,6 +29,23 @@ watch(isOnline, async (online) => {
     shoppingStore.fetchItems(authStore.householdId, {silent: true}),
   ])
 })
+
+watch(
+  () => authStore.sessionEndedReason,
+  async (reason) => {
+    if (!reason) return
+
+    const captured = reason
+    authStore.clearSessionEndedReason()
+
+    if (captured === 'expired') {
+      toast.show('Sesja wygasła – zaloguj się ponownie', 'info', 6000)
+      if (!router.currentRoute.value.meta.public) {
+        await router.push('/login')
+      }
+    }
+  },
+)
 </script>
 
 <template>

@@ -21,12 +21,13 @@ import ZoneSelect from '@/components/shopping/ZoneSelect.vue'
 import ToggleSwitch from '@/components/shared/ToggleSwitch.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useUserPreferences} from '@/composables/useUserPreferences'
+import QuickAddChips from '@/components/shopping/QuickAddChips.vue'
 
 const shoppingStore = useShoppingStore()
 const storesStore = useStoresStore()
 const authStore = useAuthStore()
 const confirm = useConfirmStore()
-const {items, error, loading} = storeToRefs(shoppingStore)
+const {items, suggestions, error, loading} = storeToRefs(shoppingStore)
 const {stores, zones, locations, currentMapUrl} = storeToRefs(storesStore)
 const {isOnline} = useOnlineStatus()
 const {run} = useAsyncAction()
@@ -68,13 +69,17 @@ async function initialFetch() {
   if (!authStore.householdId) return
   await Promise.all([
     shoppingStore.fetchItems(authStore.householdId),
+    shoppingStore.fetchSuggestions(authStore.householdId),
     storesStore.fetchStores(authStore.householdId),
   ])
 }
 
 async function realtimeRefresh() {
   if (authStore.householdId) {
-    await shoppingStore.fetchItems(authStore.householdId, {silent: true})
+    await Promise.all([
+      shoppingStore.fetchItems(authStore.householdId, { silent: true }),
+      shoppingStore.fetchSuggestions(authStore.householdId),
+    ])
   }
 }
 
@@ -100,6 +105,14 @@ async function handleAdd() {
   if (preferences.value.clearInputAfterAdd) {
     newItem.value = ''
   }
+}
+
+async function handleQuickAdd(name: string) {
+  if (!authStore.householdId || !isOnline.value) return
+  await run(
+    () => shoppingStore.addItem(authStore.householdId!, name),
+    { success: `Dodano: ${name}` },
+  )
 }
 
 async function handleToggle(id: string) {
@@ -193,6 +206,12 @@ useRealtimeSubscription('product_locations', () => {
       <input v-model="newItem" type="text" placeholder="Co dokupić?" required :maxlength="NAME_MAX_LENGTH"/>
       <button type="submit" :disabled="!isOnline">Dodaj</button>
     </form>
+
+    <QuickAddChips
+      :suggestions="suggestions"
+      :disabled="!isOnline"
+      @add="handleQuickAdd"
+    />
 
     <ShoppingFilters v-model:search="search"/>
 

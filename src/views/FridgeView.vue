@@ -5,7 +5,8 @@ import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
-import {type CategoryFilter, useFridgeItems} from '@/composables/useFridgeItems'
+import {type ExpiryFilter, useFridgeItems} from '@/composables/useFridgeItems'
+import type {ProductCategoryFilter} from '@/components/fridge/FridgeFilters.vue'
 import FridgeFilters from '@/components/fridge/FridgeFilters.vue'
 import FridgeItemList from '@/components/fridge/FridgeItemList.vue'
 import AddFridgeItemForm from '@/components/fridge/AddFridgeItemForm.vue'
@@ -23,8 +24,10 @@ const {items, loading, error} = storeToRefs(fridgeStore)
 const {run} = useAsyncAction()
 
 const search = ref('')
-const category = ref<CategoryFilter>('all')
-const {filteredSorted} = useFridgeItems(items, search, category)
+const expiryFilter = ref<ExpiryFilter>('all')
+const productCategory = ref<ProductCategoryFilter>('all')
+
+const {filteredSorted} = useFridgeItems(items, search, expiryFilter, productCategory)
 
 const editingItem = ref<FridgeItem | null>(null)
 const submitting = ref(false)
@@ -90,7 +93,11 @@ useRealtimePartnerToast<FridgeItem>(
     <h1>Moja lodówka</h1>
     <AddFridgeItemForm :disabled="!isOnline"/>
     <ErrorBanner v-if="error" :message="error" @dismiss="fridgeStore.clearError"/>
-    <FridgeFilters v-model:search="search" v-model:category="category"/>
+    <FridgeFilters
+      v-model:search="search"
+      v-model:expiry-filter="expiryFilter"
+      v-model:product-category="productCategory"
+    />
     <FridgeItemList
       :items="filteredSorted"
       :loading="loading"

@@ -4,6 +4,7 @@ import {Pencil, ShoppingCart, Trash2} from 'lucide-vue-next'
 import type {FridgeItem} from '@/types/database.types'
 import InlineEdit from '@/components/shared/InlineEdit.vue'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
+import CategoryBadge from './CategoryBadge.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
 import {NAME_MAX_LENGTH} from '@/lib/validation'
@@ -26,9 +27,7 @@ function badgeClass(item: FridgeItem) {
 
 <template>
   <SkeletonList v-if="loading" :count="3"/>
-  <div v-else-if="items.length === 0" class="state">
-    Brak produktów spełniających kryteria.
-  </div>
+  <div v-else-if="items.length === 0" class="state">Brak produktów spełniających kryteria.</div>
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="badgeClass(item)">
       <div class="info">
@@ -40,6 +39,7 @@ function badgeClass(item: FridgeItem) {
           emphasis
           @update="emit('update-name', item.id, $event as string)"
         />
+        <CategoryBadge :category="item.category"/>
         <InlineEdit
           :model-value="item.quantity"
           type="number"

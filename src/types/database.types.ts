@@ -5,6 +5,7 @@ export interface FridgeItem {
   quantity: number
   unit: string
   expiry_date: string | null
+  category: string | null
   created_by: string | null
   created_at: string
   updated_at: string

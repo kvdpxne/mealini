@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import {UNITS} from '@/lib/units'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
 import {useFridgeStore} from '@/stores/fridge.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useUserPreferences} from '@/composables/useUserPreferences'
+import {PRODUCT_CATEGORIES} from '@/lib/productCategories'
+import {UNITS} from '@/lib/units'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
 const {preferences} = useUserPreferences()
 
-const props = withDefaults(defineProps<{ disabled?: boolean }>(), {disabled: false})
 const name = ref('')
+const category = ref<string>('')
 const quantity = ref<number>(1)
 const unit = ref('szt')
 const expiryDate = ref('')
@@ -26,12 +27,14 @@ async function handleSubmit() {
     await fridgeStore.addItem({
       household_id: authStore.householdId,
       name: name.value.trim(),
+      category: category.value || null,
       quantity: quantity.value,
       unit: unit.value,
       expiry_date: expiryDate.value || null,
     })
     if (preferences.value.clearInputAfterAdd) {
       name.value = ''
+      category.value = ''
       quantity.value = 1
       unit.value = 'szt'
       expiryDate.value = ''
@@ -46,13 +49,23 @@ async function handleSubmit() {
 
 <template>
   <form class="add-form" @submit.prevent="handleSubmit">
-    <input v-model="name" type="text" placeholder="Nazwa produktu" required :maxlength="NAME_MAX_LENGTH"/>
+    <input
+      v-model="name"
+      type="text"
+      placeholder="Nazwa produktu"
+      required
+      :maxlength="NAME_MAX_LENGTH"
+    />
+    <select v-model="category" title="Kategoria">
+      <option value="">Bez kategorii</option>
+      <option v-for="c in PRODUCT_CATEGORIES" :key="c.value" :value="c.value">{{ c.label }}</option>
+    </select>
     <input v-model.number="quantity" type="number" min="0.01" step="0.01" placeholder="Ilość"/>
     <select v-model="unit">
       <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
     </select>
     <input v-model="expiryDate" type="date" title="Data ważności (opcjonalnie)"/>
-    <button type="submit" :disabled="submitting || disabled">
+    <button type="submit" :disabled="submitting">
       {{ submitting ? 'Dodawanie...' : 'Dodaj do lodówki' }}
     </button>
     <p v-if="localError" class="error">{{ localError }}</p>

@@ -2,22 +2,20 @@
 import {nextTick, ref, watch} from 'vue'
 import {X} from 'lucide-vue-next'
 import {UNITS} from '@/lib/units'
-import { NAME_MAX_LENGTH } from '@/lib/validation'
+import {PRODUCT_CATEGORIES} from '@/lib/productCategories'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
 
-type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date'>>
+type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category'>>
 
-const props = defineProps<{
-  item: FridgeItem | null
-  submitting?: boolean
-}>()
-
+const props = defineProps<{ item: FridgeItem | null; submitting?: boolean }>()
 const emit = defineEmits<{
   (e: 'save', id: string, updates: FridgeItemUpdates): void
   (e: 'close'): void
 }>()
 
 const name = ref('')
+const category = ref<string>('')
 const quantity = ref<number>(1)
 const unit = ref<string>('szt')
 const expiryDate = ref('')
@@ -28,6 +26,7 @@ watch(
   async (item) => {
     if (!item) return
     name.value = item.name
+    category.value = item.category ?? ''
     quantity.value = item.quantity
     unit.value = item.unit
     expiryDate.value = item.expiry_date ?? ''
@@ -42,6 +41,7 @@ function handleSubmit() {
   if (!props.item || !name.value.trim()) return
   emit('save', props.item.id, {
     name: name.value.trim(),
+    category: category.value || null,
     quantity: quantity.value,
     unit: unit.value,
     expiry_date: expiryDate.value || null,
@@ -49,7 +49,9 @@ function handleSubmit() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') {
+    emit('close')
+  }
 }
 </script>
 
@@ -89,6 +91,14 @@ function handleKeydown(e: KeyboardEvent) {
             </select>
           </label>
         </div>
+
+        <label>
+          Kategoria
+          <select v-model="category">
+            <option value="">Bez kategorii</option>
+            <option v-for="c in PRODUCT_CATEGORIES" :key="c.value" :value="c.value">{{ c.label }}</option>
+          </select>
+        </label>
 
         <label>
           Data ważności (opcjonalnie)

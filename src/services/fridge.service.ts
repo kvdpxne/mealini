@@ -1,6 +1,7 @@
 import {supabase} from '@/lib/supabaseClient'
 import {NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
+import {isValidProductCategory} from '@/lib/productCategories'
 
 export const fridgeService = {
   async getItems(householdId: string): Promise<FridgeItem[]> {
@@ -15,7 +16,7 @@ export const fridgeService = {
   },
 
   async addItem(
-    item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'name_normalized'>,
+    item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by'>,
   ): Promise<FridgeItem> {
     const trimmed = item.name.trim()
     if (trimmed.length === 0) {
@@ -23,6 +24,9 @@ export const fridgeService = {
     }
     if (trimmed.length > NAME_MAX_LENGTH) {
       throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+    }
+    if (item.category !== null && !isValidProductCategory(item.category)) {
+      throw new Error('Nieprawidłowa kategoria produktu.')
     }
 
     const normalized = normalizeName(trimmed)
@@ -46,6 +50,9 @@ export const fridgeService = {
     if (error) {
       if (error.code === '23505') {
         throw new Error(`„${trimmed}” już jest w lodówce.`)
+      }
+      if (error.code === '23514') {
+        throw new Error('Nieprawidłowa kategoria produktu.')
       }
       throw new Error(`Nie udało się dodać produktu: ${error.message}`)
     }
@@ -85,6 +92,14 @@ export const fridgeService = {
       updates = {...updates, name: trimmed}
     }
 
+    if (
+      updates.category !== undefined &&
+      updates.category !== null &&
+      !isValidProductCategory(updates.category)
+    ) {
+      throw new Error('Nieprawidłowa kategoria produktu.')
+    }
+
     const {data, error} = await supabase
       .from('fridge_items')
       .update({...updates, updated_at: new Date().toISOString()})
@@ -95,6 +110,9 @@ export const fridgeService = {
     if (error) {
       if (error.code === '23505') {
         throw new Error('Produkt o tej nazwie już istnieje w lodówce.')
+      }
+      if (error.code === '23514') {
+        throw new Error('Nieprawidłowa kategoria produktu.')
       }
       throw new Error(`Nie udało się zaktualizować produktu: ${error.message}`)
     }

@@ -1,21 +1,20 @@
 import {computed, type Ref} from 'vue'
 import type {FridgeItem} from '@/types/database.types'
+import type {ProductCategory} from '@/lib/productCategories'
 import {daysBetween, parseLocalDate, todayLocalMidnight} from '@/utils/date'
 
-export type FridgeCategory = 'expired' | 'expiring' | 'fresh' | 'no-date'
-export type CategoryFilter = 'all' | FridgeCategory
+export type ExpiryStatus = 'expired' | 'expiring' | 'fresh' | 'no-date'
+export type ExpiryFilter = 'all' | ExpiryStatus
+export type ProductCategoryFilter = 'all' | 'uncategorized' | ProductCategory
 
-function categorize(expiry: string | null): FridgeCategory {
+function categorizeExpiry(expiry: string | null): ExpiryStatus {
   if (!expiry) return 'no-date'
-
   let diffDays: number
   try {
-    const target = parseLocalDate(expiry)
-    diffDays = daysBetween(todayLocalMidnight(), target)
+    diffDays = daysBetween(todayLocalMidnight(), parseLocalDate(expiry))
   } catch {
     return 'no-date'
   }
-
   if (diffDays < 0) return 'expired'
   if (diffDays <= 3) return 'expiring'
   return 'fresh'
@@ -24,7 +23,8 @@ function categorize(expiry: string | null): FridgeCategory {
 export function useFridgeItems(
   source: Ref<FridgeItem[]>,
   searchQuery?: Ref<string>,
-  categoryFilter?: Ref<CategoryFilter>,
+  expiryFilter?: Ref<ExpiryFilter>,
+  productCategory?: Ref<ProductCategoryFilter>,
 ) {
   const filteredSorted = computed(() => {
     let list = [...source.value]
@@ -34,31 +34,35 @@ export function useFridgeItems(
       list = list.filter(i => i.name.toLowerCase().includes(q))
     }
 
-    const cat = categoryFilter?.value ?? 'all'
-    if (cat !== 'all') {
-      list = list.filter(i => categorize(i.expiry_date) === cat)
+    const cat = productCategory?.value ?? 'all'
+    if (cat === 'uncategorized') {
+      list = list.filter(i => i.category === null)
+    } else if (cat !== 'all') {
+      list = list.filter(i => i.category === cat)
     }
 
-    const order: Record<FridgeCategory, number> = {
-      expired: 0,
-      expiring: 1,
-      fresh: 2,
-      'no-date': 3,
+    const exp = expiryFilter?.value ?? 'all'
+    if (exp !== 'all') {
+      list = list.filter(i => categorizeExpiry(i.expiry_date) === exp)
+    }
+
+    const order: Record<ExpiryStatus, number> = {
+      expired: 0, expiring: 1, fresh: 2, 'no-date': 3,
     }
     return list.sort((a, b) => {
-      const catA = categorize(a.expiry_date)
-      const catB = categorize(b.expiry_date)
+      const catA = categorizeExpiry(a.expiry_date)
+      const catB = categorizeExpiry(b.expiry_date)
       if (order[catA] !== order[catB]) return order[catA] - order[catB]
       return a.name.localeCompare(b.name, 'pl')
     })
   })
 
   const expiringSoon = computed(() =>
-    filteredSorted.value.filter(i => categorize(i.expiry_date) === 'expiring'),
+    filteredSorted.value.filter(i => categorizeExpiry(i.expiry_date) === 'expiring'),
   )
   const expired = computed(() =>
-    filteredSorted.value.filter(i => categorize(i.expiry_date) === 'expired'),
+    filteredSorted.value.filter(i => categorizeExpiry(i.expiry_date) === 'expired'),
   )
 
-  return {filteredSorted, expiringSoon, expired, categorize}
+  return {filteredSorted, expiringSoon, expired, categorize: categorizeExpiry}
 }

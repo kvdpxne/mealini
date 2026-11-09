@@ -1,6 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import type {ProductLocation} from '@/types/database.types'
-import {normalizeName} from '@/lib/validation'
+import {LIMITS, normalizeName} from '@/lib/validation'
 
 export const productLocationService = {
   async listForStore(storeId: string): Promise<ProductLocation[]> {
@@ -20,6 +20,9 @@ export const productLocationService = {
   ): Promise<void> {
     const normalized = normalizeName(productName)
     if (!normalized) throw new Error('Nazwa produktu jest pusta.')
+    if (normalized.length > LIMITS.fridgeItemName) {
+      throw new Error(`Nazwa produktu może mieć maksymalnie ${LIMITS.fridgeItemName} znaków.`)
+    }
 
     if (zoneId === null) {
       const {error} = await supabase

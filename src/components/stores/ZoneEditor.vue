@@ -2,6 +2,7 @@
 import {ref} from 'vue'
 import {ArrowDown, ArrowUp, Check, Pencil, Plus, Trash2, X} from 'lucide-vue-next'
 import type {StoreZone} from '@/types/database.types'
+import {LIMITS} from '@/lib/validation'
 
 const props = defineProps<{ zones: StoreZone[]; disabled?: boolean }>()
 const emit = defineEmits<{
@@ -48,7 +49,7 @@ function cancelRename() {
           <input
             v-model="editingName"
             class="rename-input"
-            maxlength="40"
+            :maxlength="LIMITS.storeZoneName"
             autofocus
             @keyup.enter="commitRename"
             @keyup.esc="cancelRename"
@@ -81,7 +82,7 @@ function cancelRename() {
     </ul>
 
     <form class="add-form" @submit.prevent="handleAdd">
-      <input v-model="newName" type="text" maxlength="40" placeholder="np. Pieczywo" :disabled="disabled"/>
+      <input v-model="newName" type="text" :maxlength="LIMITS.storeZoneName" placeholder="np. Pieczywo" :disabled="disabled"/>
       <button type="submit" :disabled="disabled || !newName.trim()">
         <Plus :size="14"/>
         <span>Dodaj strefę</span>

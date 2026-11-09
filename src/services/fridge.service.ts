@@ -1,5 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
-import {NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
+import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
 import {isValidProductCategory} from '@/lib/productCategories'
 
@@ -24,6 +24,12 @@ export const fridgeService = {
     }
     if (trimmed.length > NAME_MAX_LENGTH) {
       throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+    }
+    if (item.unit.trim().length === 0 || item.unit.length > LIMITS.fridgeItemUnit) {
+      throw new Error(`Jednostka musi mieć od 1 do ${LIMITS.fridgeItemUnit} znaków.`)
+    }
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0 || item.quantity > 1_000_000) {
+      throw new Error(`Ilość musi być liczbą większą od 0 i nie większą niż ${1_000_000}.`)
     }
     if (item.category !== null && !isValidProductCategory(item.category)) {
       throw new Error('Nieprawidłowa kategoria produktu.')

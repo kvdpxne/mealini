@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {nextTick, ref, watch} from 'vue'
 import {X} from 'lucide-vue-next'
+import {LIMITS} from '@/lib/validation'
 
 const props = defineProps<{
   visible: boolean
@@ -46,7 +47,7 @@ function submit() {
         </header>
         <label>
           Nazwa sklepu
-          <input ref="inputEl" v-model="name" type="text" maxlength="60" required/>
+          <input ref="inputEl" v-model="name" type="text" :maxlength="LIMITS.storeName" required/>
         </label>
         <div class="actions">
           <button type="button" class="secondary" @click="emit('close')">Anuluj</button>

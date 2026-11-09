@@ -1,5 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import type {UserProfile} from '@/types/database.types'
+import {LIMITS} from '@/lib/validation'
 
 export type ProfileUpdates = Partial<Pick<UserProfile, 'first_name' | 'last_name' | 'nickname'>>
 
@@ -20,6 +21,16 @@ export const profileService = {
   },
 
   async updateProfile(userId: string, updates: ProfileUpdates): Promise<UserProfile> {
+    const validate = (value: string | null | undefined, max: number, label: string) => {
+      const t = value?.trim()
+      if (t && t.length > max) {
+        throw new Error(`${label} może mieć maksymalnie ${max} znaków.`)
+      }
+    }
+    validate(updates.first_name, LIMITS.profileFirstName, 'Imię')
+    validate(updates.last_name, LIMITS.profileLastName, 'Nazwisko')
+    validate(updates.nickname, LIMITS.profileNickname, 'Nickname')
+
     const payload: ProfileUpdates = {
       first_name: normalize(updates.first_name),
       last_name: normalize(updates.last_name),

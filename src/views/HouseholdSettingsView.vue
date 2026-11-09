@@ -9,6 +9,7 @@ import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {displayName} from '@/utils/displayName'
+import {LIMITS} from '@/lib/validation'
 
 const householdStore = useHouseholdStore()
 const authStore = useAuthStore()
@@ -98,7 +99,7 @@ watch(
     <section class="card">
       <h2>Nazwa</h2>
       <form class="inline-form" @submit.prevent="handleRename">
-        <input v-model="nameDraft" type="text" maxlength="60" placeholder="Nazwa gospodarstwa"/>
+        <input v-model="nameDraft" type="text" :maxlength="LIMITS.householdName" placeholder="Nazwa gospodarstwa"/>
         <button type="submit">Zapisz</button>
       </form>
     </section>

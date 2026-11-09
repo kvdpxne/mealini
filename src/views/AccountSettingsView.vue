@@ -8,6 +8,7 @@ import {useProfileStore} from '@/stores/profile.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
 import {displayName} from '@/utils/displayName'
 import {useUserPreferences} from '@/composables/useUserPreferences'
+import {LIMITS} from '@/lib/validation'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -126,15 +127,15 @@ async function handleProfileSave() {
       <form @submit.prevent="handleProfileSave">
         <label>
           Imię
-          <input v-model="firstName" type="text" maxlength="50" autocomplete="given-name"/>
+          <input v-model="firstName" type="text" :maxlength="LIMITS.profileFirstName" autocomplete="given-name"/>
         </label>
         <label>
           Nazwisko
-          <input v-model="lastName" type="text" maxlength="50" autocomplete="family-name"/>
+          <input v-model="lastName" type="text" :maxlength="LIMITS.profileLastName" autocomplete="family-name"/>
         </label>
         <label>
           Nickname
-          <input v-model="nickname" type="text" maxlength="30" placeholder="np. anka"/>
+          <input v-model="nickname" type="text" :maxlength="LIMITS.profileNickname" placeholder="np. anka"/>
         </label>
         <p class="preview">
           <User :size="14"/>

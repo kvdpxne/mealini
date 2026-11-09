@@ -2,6 +2,7 @@ import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import type {FridgeItem} from '@/types/database.types'
 import {fridgeService} from '@/services/fridge.service'
+import {userScopedStorage} from '@/lib/userScopedStorage'
 
 type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date'>>
 
@@ -78,14 +79,21 @@ export const useFridgeStore = defineStore('fridge', () => {
     await updateItem(id, {name})
   }
 
+  function $reset() {
+    items.value = []
+    loading.value = false
+    error.value = null
+  }
+
   return {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
-    moveToShopping, updateItem, updateQuantity, updateName
+    moveToShopping, updateItem, updateQuantity, updateName,
+    $reset
   }
 }, {
   persist: {
-    key: 'fridge-cache-v1',
-    storage: localStorage,
+    key: 'fridge-items',
+    storage: userScopedStorage,
     pick: ['items'],
   },
 })

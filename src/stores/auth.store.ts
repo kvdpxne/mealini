@@ -2,6 +2,8 @@ import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
 import type {AuthChangeEvent, Session, User} from '@supabase/supabase-js'
 import {authService} from '@/services/auth.service'
+import { setStorageUser } from '@/lib/userScopedStorage'
+import { teardownPersistedState } from '@/lib/sessionTeardown'
 
 export type SessionEndReason = 'voluntary' | 'expired' | null
 
@@ -10,9 +12,9 @@ export const useAuthStore = defineStore('auth', () => {
   const householdId = ref<string | null>(null)
   const initialized = ref(false)
   const loading = ref(false)
-
   const sessionEndedReason = ref<SessionEndReason>(null)
   const lastVoluntarySignOutAt = ref<number | null>(null)
+  const lastSignedInUserId = ref<string | null>(null)
 
   const user = computed<User | null>(() => session.value?.user ?? null)
   const isAuthenticated = computed(() => session.value !== null)
@@ -22,7 +24,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     session.value = await authService.getSession()
     if (session.value) {
+      setStorageUser(session.value.user.id)
+      lastSignedInUserId.value = session.value.user.id
       householdId.value = await authService.getCurrentUserHouseholdId()
+    } else {
+      setStorageUser(null)
     }
 
     authService.onAuthStateChange(async (event: AuthChangeEvent, newSession: Session | null) => {
@@ -32,9 +38,20 @@ export const useAuthStore = defineStore('auth', () => {
         : null
 
       if (event === 'SIGNED_OUT') {
+        const prevUser = lastSignedInUserId.value
         const at = lastVoluntarySignOutAt.value
         const isVoluntary = at !== null && Date.now() - at < 3000
         sessionEndedReason.value = isVoluntary ? 'voluntary' : 'expired'
+
+        // Teardown – kolejność: reset (przez scoped key byłego usera),
+        // jawny removeItem, dopiero potem scope null.
+        teardownPersistedState(prevUser)
+
+        lastSignedInUserId.value = null
+        setStorageUser(null)
+      } else if (newSession) {
+        setStorageUser(newSession.user.id)
+        lastSignedInUserId.value = newSession.user.id
       }
     })
 
@@ -63,7 +80,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function signOut() {
-    // Znacznik czasu – listener sprawdzi go, gdy przyjdzie SIGNED_OUT
+    // NIE czyścimy lastSignedInUserId tutaj – listener SIGNED_OUT potrzebuje
+    // go do wyczyszczenia kluczy. Wyczyścimy dopiero po teardownie.
     lastVoluntarySignOutAt.value = Date.now()
     loading.value = true
     try {

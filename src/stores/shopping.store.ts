@@ -4,6 +4,7 @@ import type {ShoppingListItem} from '@/types/database.types'
 import type {ShoppingSuggestion} from '@/services/shopping-history.service'
 import {shoppingHistoryService} from '@/services/shopping-history.service'
 import {shoppingService} from '@/services/shopping.service'
+import { userScopedStorage } from '@/lib/userScopedStorage'
 
 export const useShoppingStore = defineStore(
   'shopping',
@@ -101,17 +102,25 @@ export const useShoppingStore = defineStore(
       return count
     }
 
+    function $reset() {
+      items.value = []
+      suggestions.value = []
+      loading.value = false
+      error.value = null
+    }
+
     return {
       items, suggestions, loading, error,
       toBuy, bought,
       fetchItems, fetchSuggestions, clearError,
       addItem, toggleBought, deleteItem, clearBought,
-      moveToFridge, moveAllBoughtToFridge
+      moveToFridge, moveAllBoughtToFridge,
+      $reset
     }
   }, {
     persist: {
-      key: 'shopping-cache-v1',
-      storage: localStorage,
+      key: 'shopping-items',
+      storage: userScopedStorage,
       pick: ['items', 'suggestions'],
     },
   })

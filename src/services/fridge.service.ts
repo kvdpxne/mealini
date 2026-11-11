@@ -109,6 +109,31 @@ export const fridgeService = {
     if (error) throw new Error(`Nie udało się usunąć produktu: ${error.message}`)
   },
 
+  async restoreItem(item: FridgeItem): Promise<FridgeItem> {
+    const { data, error } = await supabase
+      .from('fridge_items')
+      .insert({
+        id: item.id,
+        household_id: item.household_id,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        expiry_date: item.expiry_date,
+        category: item.category,
+        created_at: item.created_at
+      })
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`Nie można przywrócić „${item.name}” – produkt o tej nazwie już istnieje.`)
+      }
+      throw new Error(`Nie udało się przywrócić produktu: ${error.message}`)
+    }
+    return data
+  },
+
   async moveToShopping(itemId: string): Promise<void> {
     const {error} = await supabase.rpc('move_fridge_item_to_shopping', {
       item_id: itemId,

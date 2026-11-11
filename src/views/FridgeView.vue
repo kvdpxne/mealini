@@ -15,6 +15,7 @@ import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useRealtimePartnerToast} from '@/composables/useRealtimePartnerToast'
 import {useOnlineStatus} from '@/composables/useOnlineStatus'
 import type {FridgeItem} from '@/types/database.types'
+import {useToastStore} from '@/stores/toast.store'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
@@ -31,6 +32,7 @@ const {filteredSorted} = useFridgeItems(items, search, expiryFilter, productCate
 
 const editingItem = ref<FridgeItem | null>(null)
 const submitting = ref(false)
+const toast = useToastStore()
 
 async function initialFetch() {
   if (authStore.householdId) {
@@ -57,7 +59,28 @@ async function handleSave(id: string, updates: Parameters<typeof fridgeStore.upd
 async function handleDelete(id: string) {
   const ok = await confirm.ask('Usunąć ten produkt z lodówki?', 'Usuń produkt')
   if (!ok) return
-  await run(() => fridgeStore.deleteItem(id))
+
+  const deleted = await run(async () => {
+    return await fridgeStore.deleteItem(id)
+  })
+  if (!deleted) return  // item nie istniał lub delete rzucił
+
+  toast.showWithAction(
+    `Usunięto: ${deleted.name}`,
+    'info',
+    {
+      label: 'Cofnij',
+      handler: () => handleUndoDelete(deleted),
+    },
+    5000,
+  )
+}
+
+async function handleUndoDelete(item: FridgeItem) {
+  await run(async () => {
+    await fridgeStore.restoreItem(item)
+    return true as const
+  }, {success: 'Przywrócono produkt'})
 }
 
 async function handleMoveToShopping(id: string) {

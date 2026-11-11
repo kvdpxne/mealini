@@ -80,6 +80,30 @@ export const shoppingService = {
     if (error) throw new Error(`Nie udało się usunąć pozycji: ${error.message}`)
   },
 
+  async restoreItem(item: ShoppingListItem): Promise<ShoppingListItem> {
+    const {data, error} = await supabase
+      .from('shopping_list_items')
+      .insert({
+        id: item.id,
+        household_id: item.household_id,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        is_bought: item.is_bought,
+        created_at: item.created_at
+      })
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`Nie można przywrócić „${item.name}” – pozycja o tej nazwie już istnieje.`)
+      }
+      throw new Error(`Nie udało się przywrócić pozycji: ${error.message}`)
+    }
+    return data
+  },
+
   async clearBought(householdId: string): Promise<void> {
     const {error} = await supabase
       .from('shopping_list_items')

@@ -4,7 +4,7 @@ import type {ShoppingListItem} from '@/types/database.types'
 import type {ShoppingSuggestion} from '@/services/shopping-history.service'
 import {shoppingHistoryService} from '@/services/shopping-history.service'
 import {shoppingService} from '@/services/shopping.service'
-import { userScopedStorage } from '@/lib/userScopedStorage'
+import {userScopedStorage} from '@/lib/userScopedStorage'
 
 export const useShoppingStore = defineStore(
   'shopping',
@@ -69,17 +69,25 @@ export const useShoppingStore = defineStore(
       if (idx !== -1) items.value[idx] = updated
     }
 
-    async function deleteItem(id: string) {
+    async function deleteItem(id: string): Promise<ShoppingListItem | undefined> {
       const idx = items.value.findIndex(i => i.id === id)
-      if (idx === -1) return
+      if (idx === -1) return undefined
       const removed = items.value[idx]
       items.value.splice(idx, 1)
       try {
         await shoppingService.deleteItem(id)
+        return removed
       } catch (e) {
         items.value.splice(idx, 0, removed)
         throw e
       }
+    }
+
+    async function restoreItem(item: ShoppingListItem) {
+      const restored = await shoppingService.restoreItem(item)
+      items.value.push(restored)
+      // Historia zakupów: restore podbije add_count przez trigger –
+      // nieznaczny efekt uboczny, akceptowalny dla MVP
     }
 
     async function clearBought(householdId: string) {
@@ -121,7 +129,7 @@ export const useShoppingStore = defineStore(
       toBuy, bought,
       fetchItems, fetchSuggestions, clearError,
       addItem, toggleBought, deleteItem, clearBought,
-      moveToFridge, moveAllBoughtToFridge,
+      restoreItem, moveToFridge, moveAllBoughtToFridge,
       $reset
     }
   }, {

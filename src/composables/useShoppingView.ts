@@ -14,6 +14,8 @@ import {useSelectedStore} from '@/composables/useSelectedStore'
 import {useRouteSortPreference} from '@/composables/useRouteSortPreference'
 import {useOnlineStatus} from '@/composables/useOnlineStatus'
 import {useUserPreferences} from '@/composables/useUserPreferences'
+import {useToastStore} from '@/stores/toast.store'
+import type {ShoppingListItem} from '@/types/database.types'
 
 export function useShoppingView() {
   const shoppingStore = useShoppingStore()
@@ -22,6 +24,7 @@ export function useShoppingView() {
   const locationsStore = useProductLocationsStore()
   const authStore = useAuthStore()
   const confirm = useConfirmStore()
+  const toast = useToastStore()
 
   const {items, suggestions, error, loading} = storeToRefs(shoppingStore)
   const {stores, currentMapUrl} = storeToRefs(storesStore)
@@ -129,10 +132,28 @@ export function useShoppingView() {
   async function handleDelete(id: string) {
     const ok = await confirm.ask('Usunąć tę pozycję?', 'Usuń pozycję')
     if (!ok) return
-    await run(async () => {
-      await shoppingStore.deleteItem(id)
-      return true as const
+
+    const deleted = await run(async () => {
+      return await shoppingStore.deleteItem(id)
     })
+    if (!deleted) return
+
+    toast.showWithAction(
+      `Usunięto: ${deleted.name}`,
+      'info',
+      {
+        label: 'Cofnij',
+        handler: () => handleUndoDelete(deleted),
+      },
+      5000,
+    )
+  }
+
+  async function handleUndoDelete(item: ShoppingListItem) {
+    await run(async () => {
+      await shoppingStore.restoreItem(item)
+      return true as const
+    }, {success: 'Przywrócono pozycję'})
   }
 
   async function handleClear() {

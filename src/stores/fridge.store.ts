@@ -35,17 +35,23 @@ export const useFridgeStore = defineStore('fridge', () => {
     items.value.push(newItem)
   }
 
-  async function deleteItem(id: string) {
+  async function deleteItem(id: string): Promise<FridgeItem | undefined> {
     const idx = items.value.findIndex(i => i.id === id)
-    if (idx === -1) return
+    if (idx === -1) return undefined
     const removed = items.value[idx]
     items.value.splice(idx, 1)
     try {
       await fridgeService.deleteItem(id)
+      return removed
     } catch (e) {
       items.value.splice(idx, 0, removed)
       throw e
     }
+  }
+
+  async function restoreItem(item: FridgeItem) {
+    const restored = await fridgeService.restoreItem(item)
+    items.value.push(restored)
   }
 
   async function moveToShopping(id: string) {
@@ -87,7 +93,7 @@ export const useFridgeStore = defineStore('fridge', () => {
 
   return {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
-    moveToShopping, updateItem, updateQuantity, updateName,
+    restoreItem, moveToShopping, updateItem, updateQuantity, updateName,
     $reset
   }
 }, {

@@ -1,6 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import type {ProductLocation} from '@/types/database.types'
-import {LIMITS, normalizeName} from '@/lib/validation'
+import {normalizeName} from '@/lib/validation'
 
 export const productLocationService = {
   async listForStore(storeId: string): Promise<ProductLocation[]> {
@@ -20,9 +20,6 @@ export const productLocationService = {
   ): Promise<void> {
     const normalized = normalizeName(productName)
     if (!normalized) throw new Error('Nazwa produktu jest pusta.')
-    if (normalized.length > LIMITS.fridgeItemName) {
-      throw new Error(`Nazwa produktu może mieć maksymalnie ${LIMITS.fridgeItemName} znaków.`)
-    }
 
     if (zoneId === null) {
       const {error} = await supabase
@@ -34,17 +31,29 @@ export const productLocationService = {
       return
     }
 
-    const {error} = await supabase
-      .from('product_locations')
-      .upsert(
-        {
-          household_id: householdId,
-          store_id: storeId,
-          zone_id: zoneId,
-          product_name_normalized: normalized,
-        },
-        {onConflict: 'store_id,product_name_normalized'},
-      )
-    if (error) throw new Error(`Nie udało się zapisać przypisania: ${error.message}`)
-  },
+    const {error} = await supabase.from('product_locations').upsert({
+      household_id: householdId,
+      store_id: storeId,
+      zone_id: zoneId,
+      product_name_normalized: normalized,
+    }, {
+      onConflict: 'store_id,product_name_normalized'
+    })
+
+    if (error) {
+      if (error.code === '23503') {
+        // FK violation = bug klienta. Nie pokazujemy surowego komunikatu
+        // Postgresa użytkownikowi, ale logujemy pełne szczegóły.
+        console.error('[product_locations] FK violation', {
+          householdId,
+          storeId,
+          zoneId,
+          productName,
+          error,
+        })
+        throw new Error('Dane są niespójne. Odśwież stronę i spróbuj ponownie.')
+      }
+      throw new Error(`Nie udało się zapisać przypisania: ${error.message}`)
+    }
+  }
 }

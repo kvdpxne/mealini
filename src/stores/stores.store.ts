@@ -1,16 +1,13 @@
-import {defineStore} from 'pinia'
-import {ref} from 'vue'
-import {storeService} from '@/services/store.service'
-import {storageService} from '@/services/storage.service'
-import {productLocationService} from '@/services/product-location.service'
-import type {ProductLocation, Store, StoreZone} from '@/types/database.types'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { storeService } from '@/services/store.service'
+import { storageService } from '@/services/storage.service'
+import type { Store } from '@/types/database.types'
 
 export const useStoresStore = defineStore('stores', () => {
   const stores = ref<Store[]>([])
   const currentStore = ref<Store | null>(null)
   const currentMapUrl = ref<string | null>(null)
-  const zones = ref<StoreZone[]>([])
-  const locations = ref<ProductLocation[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -26,7 +23,8 @@ export const useStoresStore = defineStore('stores', () => {
     }
   }
 
-  async function fetchStoreDetail(storeId: string) {
+  /** Ładuje szczegóły sklepu + signed URL mapy. Nie dotyka zones/locations. */
+  async function fetchStore(storeId: string) {
     loading.value = true
     error.value = null
     try {
@@ -34,8 +32,6 @@ export const useStoresStore = defineStore('stores', () => {
       currentMapUrl.value = currentStore.value?.map_path
         ? await storageService.getSignedUrl(currentStore.value.map_path)
         : null
-      zones.value = await storeService.listZones(storeId)
-      locations.value = await productLocationService.listForStore(storeId)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Nieznany błąd'
     } finally {
@@ -66,8 +62,7 @@ export const useStoresStore = defineStore('stores', () => {
     const idx = stores.value.findIndex(s => s.id === storeId)
     if (idx !== -1) stores.value[idx].map_path = newPath
     if (oldPath && oldPath !== newPath) {
-      await storageService.deleteStoreMap(oldPath).catch(() => {
-      })
+      await storageService.deleteStoreMap(oldPath).catch(() => {})
     }
   }
 
@@ -78,57 +73,31 @@ export const useStoresStore = defineStore('stores', () => {
     currentMapUrl.value = null
     const idx = stores.value.findIndex(s => s.id === storeId)
     if (idx !== -1) stores.value[idx].map_path = null
-    if (oldPath) await storageService.deleteStoreMap(oldPath).catch(() => {
-    })
+    if (oldPath) await storageService.deleteStoreMap(oldPath).catch(() => {})
   }
 
   async function deleteStore(id: string) {
     await storeService.delete(id)
     stores.value = stores.value.filter(s => s.id !== id)
+    if (currentStore.value?.id === id) {
+      currentStore.value = null
+      currentMapUrl.value = null
+    }
   }
 
-  async function addZone(storeId: string, name: string) {
-    const zone = await storeService.addZone(storeId, name)
-    zones.value.push(zone)
+  function clearCurrent() {
+    currentStore.value = null
+    currentMapUrl.value = null
   }
 
-  async function renameZone(id: string, name: string) {
-    const updated = await storeService.renameZone(id, name)
-    const idx = zones.value.findIndex(z => z.id === id)
-    if (idx !== -1) zones.value[idx] = updated
-  }
-
-  async function deleteZone(id: string) {
-    await storeService.deleteZone(id)
-    zones.value = zones.value.filter(z => z.id !== id)
-    locations.value = locations.value.filter(l => l.zone_id !== id)
-  }
-
-  async function moveZone(id: string, direction: -1 | 1) {
-    const idx = zones.value.findIndex(z => z.id === id)
-    const swapIdx = idx + direction
-    if (idx === -1 || swapIdx < 0 || swapIdx >= zones.value.length) return
-    const reordered = [...zones.value]
-    ;[reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]]
-    zones.value = reordered
-    await storeService.reorderZones(reordered)
-  }
-
-  async function setProductLocation(
-    householdId: string,
-    storeId: string,
-    productName: string,
-    zoneId: string | null,
-  ) {
-    await productLocationService.setLocation(householdId, storeId, productName, zoneId)
-    locations.value = await productLocationService.listForStore(storeId)
+  function clearError() {
+    error.value = null
   }
 
   return {
-    stores, currentStore, currentMapUrl, zones, locations, loading, error,
-    fetchStores, fetchStoreDetail,
+    stores, currentStore, currentMapUrl, loading, error,
+    fetchStores, fetchStore,
     create, rename, uploadMap, removeMap, deleteStore,
-    addZone, renameZone, deleteZone, moveZone,
-    setProductLocation,
+    clearCurrent, clearError,
   }
 })

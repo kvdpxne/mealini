@@ -45,10 +45,17 @@ export const useShoppingStore = defineStore(
       error.value = null
     }
 
-    async function addItem(householdId: string, name: string) {
+    async function addItem(
+      householdId: string,
+      name: string,
+      quantity = 1,
+      unit = 'szt',
+    ) {
       const created = await shoppingService.addItem({
         household_id: householdId,
-        name: name.trim(),
+        name,
+        quantity,
+        unit,
       })
       items.value.unshift(created)
       await fetchSuggestions(householdId)

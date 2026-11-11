@@ -31,6 +31,7 @@ const emit = defineEmits<{
           @change="emit('toggle', item.id)"
         />
         <span>{{ item.name }}</span>
+        <span class="qty">{{ item.quantity }} {{ item.unit }}</span>
       </label>
       <div class="actions">
         <button class="move" title="Przenieś do lodówki" :disabled="disabled" @click="emit('move-to-fridge', item.id)">
@@ -112,5 +113,10 @@ const emit = defineEmits<{
 
 .list li:hover .move, .list li.bought .move {
   opacity: 1;
+}
+
+.qty {
+  color: #6b7280;
+  font-size: 0.85rem;
 }
 </style>

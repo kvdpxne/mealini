@@ -22,6 +22,7 @@ import ToggleSwitch from '@/components/shared/ToggleSwitch.vue'
 import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useUserPreferences} from '@/composables/useUserPreferences'
 import QuickAddChips from '@/components/shopping/QuickAddChips.vue'
+import {UNITS} from '@/lib/units'
 
 const shoppingStore = useShoppingStore()
 const storesStore = useStoresStore()
@@ -38,6 +39,8 @@ const {selectedStoreId, set: setSelectedStore} = useSelectedStore()
 const {isEnabled, setEnabled} = useRouteSortPreference()
 const search = ref('')
 const newItem = ref('')
+const newQuantity = ref(1)
+const newUnit = ref('szt')
 
 const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
 
@@ -77,7 +80,7 @@ async function initialFetch() {
 async function realtimeRefresh() {
   if (authStore.householdId) {
     await Promise.all([
-      shoppingStore.fetchItems(authStore.householdId, { silent: true }),
+      shoppingStore.fetchItems(authStore.householdId, {silent: true}),
       shoppingStore.fetchSuggestions(authStore.householdId),
     ])
   }
@@ -99,11 +102,18 @@ watch(
 async function handleAdd() {
   if (!authStore.householdId || !newItem.value.trim()) return
   await run(
-    () => shoppingStore.addItem(authStore.householdId!, newItem.value),
+    () => shoppingStore.addItem(
+      authStore.householdId!,
+      newItem.value,
+      newQuantity.value,
+      newUnit.value,
+    ),
     {success: 'Dodano do listy'},
   )
   if (preferences.value.clearInputAfterAdd) {
     newItem.value = ''
+    newQuantity.value = 1
+    newUnit.value = 'szt'
   }
 }
 
@@ -111,7 +121,7 @@ async function handleQuickAdd(name: string) {
   if (!authStore.householdId || !isOnline.value) return
   await run(
     () => shoppingStore.addItem(authStore.householdId!, name),
-    { success: `Dodano: ${name}` },
+    {success: `Dodano: ${name}`},
   )
 }
 
@@ -203,7 +213,25 @@ useRealtimeSubscription('product_locations', () => {
     </details>
 
     <form class="add-form" @submit.prevent="handleAdd">
-      <input v-model="newItem" type="text" placeholder="Co dokupić?" required :maxlength="NAME_MAX_LENGTH"/>
+      <input
+        v-model="newItem"
+        type="text"
+        placeholder="Co dokupić?"
+        required
+        :maxlength="NAME_MAX_LENGTH"
+        class="add-form__name"
+      />
+      <input
+        v-model.number="newQuantity"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="Ilość"
+        class="add-form__qty"
+      />
+      <select v-model="newUnit" class="add-form__unit">
+        <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
+      </select>
       <button type="submit" :disabled="!isOnline">Dodaj</button>
     </form>
 
@@ -231,6 +259,7 @@ useRealtimeSubscription('product_locations', () => {
               <label>
                 <input type="checkbox" :checked="item.is_bought" :disabled="!isOnline" @change="handleToggle(item.id)"/>
                 <span>{{ item.name }}</span>
+                <span class="qty">{{ item.quantity }} {{ item.unit }}</span>
               </label>
               <div class="zone-actions">
                 <ZoneSelect
@@ -373,6 +402,45 @@ useRealtimeSubscription('product_locations', () => {
 .add-form {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.add-form__name {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.add-form__qty {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.add-form__unit {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.qty {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .add-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-form__name, .add-form__qty, .add-form__unit, .add-form button {
+    width: 100%;
+  }
 }
 
 .add-form input {

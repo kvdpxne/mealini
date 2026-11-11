@@ -1,5 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
-import {NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
+import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
 import type {ShoppingListItem} from '@/types/database.types'
 
 export const shoppingService = {
@@ -15,7 +15,12 @@ export const shoppingService = {
     return data ?? []
   },
 
-  async addItem(item: { household_id: string; name: string }): Promise<ShoppingListItem> {
+  async addItem(item: {
+    household_id: string
+    name: string
+    quantity: number
+    unit: string
+  }): Promise<ShoppingListItem> {
     const trimmed = item.name.trim()
     if (trimmed.length === 0) {
       throw new Error('Nazwa pozycji nie może być pusta.')
@@ -23,7 +28,12 @@ export const shoppingService = {
     if (trimmed.length > NAME_MAX_LENGTH) {
       throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
     }
-
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+      throw new Error('Ilość musi być większa od zera.')
+    }
+    if (!item.unit || item.unit.length > LIMITS.fridgeItemUnit) {
+      throw new Error(`Jednostka musi mieć od 1 do ${LIMITS.fridgeItemUnit} znaków.`)
+    }
     const normalized = normalizeName(trimmed)
     const {data: existing} = await supabase
       .from('shopping_list_items')
@@ -39,13 +49,21 @@ export const shoppingService = {
 
     const {data, error} = await supabase
       .from('shopping_list_items')
-      .insert({household_id: item.household_id, name: trimmed})
+      .insert({
+        household_id: item.household_id,
+        name: trimmed,
+        quantity: item.quantity,
+        unit: item.unit,
+      })
       .select()
       .single()
 
     if (error) {
       if (error.code === '23505') {
         throw new Error(`„${trimmed}” już jest na liście zakupów.`)
+      }
+      if (error.code === '23514') {
+        throw new Error('Nieprawidłowe dane pozycji.')
       }
       throw new Error(`Nie udało się dodać pozycji: ${error.message}`)
     }

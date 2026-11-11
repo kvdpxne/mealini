@@ -15,6 +15,8 @@ export interface ShoppingListItem {
   id: string
   household_id: string
   name: string
+  quantity: number
+  unit: string
   is_bought: boolean
   created_by: string | null
   created_at: string

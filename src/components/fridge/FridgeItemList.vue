@@ -8,12 +8,14 @@ import CategoryBadge from './CategoryBadge.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
 import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {formatQuantityParts} from '@/lib/quantity'
+import {displayStepForUnit} from '@/lib/units'
 
 const props = defineProps<{ items: FridgeItem[]; loading: boolean; disabled?: boolean }>()
 const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'move-to-shopping', id: string): void
-  (e: 'update-quantity', id: string, quantity: number): void
+  (e: 'update-quantity', id: string, quantity: number, unit: string): void
   (e: 'update-name', id: string, name: string): void
   (e: 'edit', item: FridgeItem): void
 }>()
@@ -23,11 +25,24 @@ const {categorize} = useFridgeItems(toRef(props, 'items'))
 function badgeClass(item: FridgeItem) {
   return `badge--${categorize(item.expiry_date)}`
 }
+
+function displayQty(item: FridgeItem) {
+  return formatQuantityParts(item.quantity, item.unit)
+}
+
+function handleQtyUpdate(item: FridgeItem, newValue: number) {
+  // Wyświetlana jednostka różni się od zapisanej – emit oba pola,
+  // żeby store zapisał spójną parę (np. 500 + 'g' zamiast 500 + 'kg').
+  const parts = displayQty(item)
+  emit('update-quantity', item.id, newValue, parts.unit)
+}
 </script>
 
 <template>
   <SkeletonList v-if="loading" :count="3"/>
-  <div v-else-if="items.length === 0" class="state">Brak produktów spełniających kryteria.</div>
+  <div v-else-if="items.length === 0" class="state">
+    Brak produktów spełniających kryteria.
+  </div>
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="badgeClass(item)">
       <div class="info">
@@ -41,14 +56,14 @@ function badgeClass(item: FridgeItem) {
         />
         <CategoryBadge :category="item.category"/>
         <InlineEdit
-          :model-value="item.quantity"
+          :model-value="displayQty(item).value"
           type="number"
           :min="0.01"
-          :step="0.01"
-          :suffix="item.unit"
+          :step="displayStepForUnit(displayQty(item).unit)"
+          :suffix="displayQty(item).unit"
           :disabled="disabled"
           variant="muted"
-          @update="emit('update-quantity', item.id, $event as number)"
+          @update="handleQtyUpdate(item, $event as number)"
         />
         <span v-if="item.expiry_date" class="expiry">
           {{ formatRelativeExpiry(item.expiry_date) }}

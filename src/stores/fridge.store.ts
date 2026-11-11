@@ -71,8 +71,8 @@ export const useFridgeStore = defineStore('fridge', () => {
     }
   }
 
-  async function updateQuantity(id: string, quantity: number) {
-    await updateItem(id, {quantity})
+  async function updateQuantity(id: string, quantity: number, unit: string) {
+    await updateItem(id, {quantity, unit})
   }
 
   async function updateName(id: string, name: string) {

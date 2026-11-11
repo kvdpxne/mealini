@@ -67,8 +67,11 @@ async function handleMoveToShopping(id: string) {
   )
 }
 
-async function handleUpdateQuantity(id: string, quantity: number) {
-  await run(() => fridgeStore.updateQuantity(id, quantity))
+async function handleUpdateQuantity(id: string, quantity: number, unit: string) {
+  await run(async () => {
+    await fridgeStore.updateQuantity(id, quantity, unit)
+    return true as const
+  })
 }
 
 async function handleUpdateName(id: string, name: string) {

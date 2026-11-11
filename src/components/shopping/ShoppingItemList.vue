@@ -2,6 +2,7 @@
 import {PackagePlus, Trash2} from 'lucide-vue-next'
 import type {ShoppingListItem} from '@/types/database.types'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
+import {formatQuantity} from '@/lib/quantity'
 
 defineProps<{
   items: ShoppingListItem[]
@@ -17,7 +18,6 @@ const emit = defineEmits<{
 }>()
 </script>
 
-<
 <template>
   <SkeletonList v-if="loading" :count="3"/>
   <p v-else-if="items.length === 0" class="empty">{{ emptyText }}</p>
@@ -31,7 +31,7 @@ const emit = defineEmits<{
           @change="emit('toggle', item.id)"
         />
         <span>{{ item.name }}</span>
-        <span class="qty">{{ item.quantity }} {{ item.unit }}</span>
+        <span class="qty">{{ formatQuantity(item.quantity, item.unit) }}</span>
       </label>
       <div class="actions">
         <button class="move" title="Przenieś do lodówki" :disabled="disabled" @click="emit('move-to-fridge', item.id)">

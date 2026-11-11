@@ -108,7 +108,7 @@ async function exportHousehold(householdId: string): Promise<ExportHousehold | n
     name: householdRes.data.name,
     invite_code: householdRes.data.invite_code,
     created_at: householdRes.data.created_at,
-    members: (membersRes.data ?? []).map(m => ({
+    members: ((membersRes.data ?? []) as ExportMember[]).map(m => ({
       user_id: m.user_id,
       nickname: m.nickname,
       email: m.email,

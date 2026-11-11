@@ -3,6 +3,7 @@ import {Trash2} from 'lucide-vue-next'
 import ZoneSelect from './ZoneSelect.vue'
 import type {ShoppingListItem, StoreZone} from '@/types/database.types'
 import type {ZoneGroup} from '@/composables/useShoppingLocationGroups'
+import {formatQuantity} from '@/lib/quantity'
 
 defineProps<{
   groups: ZoneGroup[]
@@ -35,7 +36,7 @@ const emit = defineEmits<{
             @change="emit('toggle', item.id)"
           />
           <span>{{ item.name }}</span>
-          <span class="qty">{{ item.quantity }} {{ item.unit }}</span>
+          <span class="qty">{{ formatQuantity(item.quantity, item.unit) }}</span>
         </label>
         <div class="zone-actions">
           <ZoneSelect

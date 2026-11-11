@@ -1,6 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import type {Store, StoreZone} from '@/types/database.types'
-import {LIMITS} from '@/lib/validation'
+import {validateStoreName, validateZoneName} from '@/lib/validators/store.validator'
 
 export interface StoreWithMapUrl extends Store {
   mapUrl: string | null
@@ -24,11 +24,7 @@ export const storeService = {
   },
 
   async create(householdId: string, name: string): Promise<Store> {
-    const trimmed = name.trim()
-    if (!trimmed) throw new Error('Nazwa sklepu nie może być pusta.')
-    if (trimmed.length > LIMITS.storeName) {
-      throw new Error(`Nazwa sklepu może mieć maksymalnie ${LIMITS.storeName} znaków.`)
-    }
+    const trimmed = validateStoreName(name)
     const {data, error} = await supabase
       .from('stores')
       .insert({household_id: householdId, name: trimmed})
@@ -39,11 +35,7 @@ export const storeService = {
   },
 
   async rename(id: string, name: string): Promise<Store> {
-    const trimmed = name.trim()
-    if (!trimmed) throw new Error('Nazwa sklepu nie może być pusta.')
-    if (trimmed.length > LIMITS.storeName) {
-      throw new Error(`Nazwa sklepu może mieć maksymalnie ${LIMITS.storeName} znaków.`)
-    }
+    const trimmed = validateStoreName(name)
     const {data, error} = await supabase
       .from('stores')
       .update({name: trimmed})
@@ -76,11 +68,7 @@ export const storeService = {
   },
 
   async addZone(storeId: string, name: string): Promise<StoreZone> {
-    const trimmed = name.trim()
-    if (!trimmed) throw new Error('Nazwa strefy nie może być pusta.')
-    if (trimmed.length > LIMITS.storeZoneName) {
-      throw new Error(`Nazwa strefy może mieć maksymalnie ${LIMITS.storeZoneName} znaków.`)
-    }
+    const trimmed = validateZoneName(name)
 
     const {data: max} = await supabase
       .from('store_zones')
@@ -101,11 +89,7 @@ export const storeService = {
   },
 
   async renameZone(id: string, name: string): Promise<StoreZone> {
-    const trimmed = name.trim()
-    if (!trimmed) throw new Error('Nazwa strefy nie może być pusta.')
-    if (trimmed.length > LIMITS.storeZoneName) {
-      throw new Error(`Nazwa strefy może mieć maksymalnie ${LIMITS.storeZoneName} znaków.`)
-    }
+    const trimmed = validateZoneName(name)
     const {data, error} = await supabase
       .from('store_zones')
       .update({name: trimmed})

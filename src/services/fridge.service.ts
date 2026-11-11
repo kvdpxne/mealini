@@ -1,7 +1,15 @@
 import {supabase} from '@/lib/supabaseClient'
-import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
-import {isValidProductCategory} from '@/lib/productCategories'
+import {normalizeName} from '@/lib/validation'
+import {
+  assertCategory,
+  validateFridgeItemInput,
+  validateFridgeItemName,
+  validateFridgeItemQuantity,
+  validateFridgeItemUnit,
+} from '@/lib/validators/fridge.validator'
+
+type NewFridgeItem = Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'name_normalized'>
 
 export const fridgeService = {
   async getItems(householdId: string): Promise<FridgeItem[]> {
@@ -10,37 +18,18 @@ export const fridgeService = {
       .select('*')
       .eq('household_id', householdId)
       .order('name', {ascending: true})
-
     if (error) throw new Error(`Nie udało się pobrać produktów: ${error.message}`)
     return data ?? []
   },
 
-  async addItem(
-    item: Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by'>,
-  ): Promise<FridgeItem> {
-    const trimmed = item.name.trim()
-    if (trimmed.length === 0) {
-      throw new Error('Nazwa produktu nie może być pusta.')
-    }
-    if (trimmed.length > NAME_MAX_LENGTH) {
-      throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
-    }
-    if (item.unit.trim().length === 0 || item.unit.length > LIMITS.fridgeItemUnit) {
-      throw new Error(`Jednostka musi mieć od 1 do ${LIMITS.fridgeItemUnit} znaków.`)
-    }
-    if (!Number.isFinite(item.quantity) || item.quantity <= 0 || item.quantity > 1_000_000) {
-      throw new Error(`Ilość musi być liczbą większą od 0 i nie większą niż ${1_000_000}.`)
-    }
-    if (item.category !== null && !isValidProductCategory(item.category)) {
-      throw new Error('Nieprawidłowa kategoria produktu.')
-    }
+  async addItem(item: NewFridgeItem): Promise<FridgeItem> {
+    const validated = validateFridgeItemInput(item)
 
-    const normalized = normalizeName(trimmed)
     const {data: existing} = await supabase
       .from('fridge_items')
       .select('id, name')
       .eq('household_id', item.household_id)
-      .eq('name_normalized', normalized)
+      .eq('name_normalized', normalizeName(validated.name))
       .maybeSingle()
 
     if (existing) {
@@ -49,77 +38,67 @@ export const fridgeService = {
 
     const {data, error} = await supabase
       .from('fridge_items')
-      .insert({...item, name: trimmed})
+      .insert({...validated, household_id: item.household_id})
       .select()
       .single()
 
     if (error) {
-      if (error.code === '23505') {
-        throw new Error(`„${trimmed}” już jest w lodówce.`)
-      }
-      if (error.code === '23514') {
-        throw new Error('Nieprawidłowa kategoria produktu.')
-      }
+      if (error.code === '23505') throw new Error(`„${validated.name}” już jest w lodówce.`)
+      if (error.code === '23514') throw new Error('Nieprawidłowa kategoria produktu.')
       throw new Error(`Nie udało się dodać produktu: ${error.message}`)
     }
     return data
   },
 
   async updateItem(id: string, updates: Partial<FridgeItem>): Promise<FridgeItem> {
-    if (updates.name !== undefined) {
-      const trimmed = updates.name.trim()
-      if (trimmed.length === 0) {
-        throw new Error('Nazwa produktu nie może być pusta.')
-      }
-      if (trimmed.length > NAME_MAX_LENGTH) {
-        throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
-      }
+    const normalized: Partial<FridgeItem> = {...updates}
 
-      const {data: current, error: fetchErr} = await supabase
+    if (updates.name !== undefined) {
+      normalized.name = validateFridgeItemName(updates.name)
+    }
+    if (updates.unit !== undefined) {
+      normalized.unit = validateFridgeItemUnit(updates.unit)
+    }
+    if (updates.quantity !== undefined) {
+      normalized.quantity = validateFridgeItemQuantity(updates.quantity)
+    }
+    if (updates.category !== undefined) {
+      assertCategory(updates.category)
+    }
+
+    // Sprawdzenie duplikatu przy zmianie nazwy (poza własnym wierszem)
+    if (updates.name !== undefined) {
+      const {data: current} = await supabase
         .from('fridge_items')
         .select('household_id')
         .eq('id', id)
         .single()
 
-      if (fetchErr || !current) throw new Error('Produkt nie istnieje.')
+      if (current) {
+        const {data: existing} = await supabase
+          .from('fridge_items')
+          .select('id, name')
+          .eq('household_id', current.household_id)
+          .eq('name_normalized', normalizeName(normalized.name!))
+          .neq('id', id)
+          .maybeSingle()
 
-      const {data: existing} = await supabase
-        .from('fridge_items')
-        .select('id, name')
-        .eq('household_id', current.household_id)
-        .eq('name_normalized', normalizeName(trimmed))
-        .neq('id', id)          // ← kluczowe: wykluczamy siebie
-        .maybeSingle()
-
-      if (existing) {
-        throw new Error(`„${existing.name}” już jest w lodówce.`)
+        if (existing) {
+          throw new Error(`„${existing.name}” już jest w lodówce.`)
+        }
       }
-
-      updates = {...updates, name: trimmed}
-    }
-
-    if (
-      updates.category !== undefined &&
-      updates.category !== null &&
-      !isValidProductCategory(updates.category)
-    ) {
-      throw new Error('Nieprawidłowa kategoria produktu.')
     }
 
     const {data, error} = await supabase
       .from('fridge_items')
-      .update({...updates, updated_at: new Date().toISOString()})
+      .update({...normalized, updated_at: new Date().toISOString()})
       .eq('id', id)
       .select()
       .single()
 
     if (error) {
-      if (error.code === '23505') {
-        throw new Error('Produkt o tej nazwie już istnieje w lodówce.')
-      }
-      if (error.code === '23514') {
-        throw new Error('Nieprawidłowa kategoria produktu.')
-      }
+      if (error.code === '23505') throw new Error('Produkt o tej nazwie już istnieje w lodówce.')
+      if (error.code === '23514') throw new Error('Nieprawidłowa kategoria produktu.')
       throw new Error(`Nie udało się zaktualizować produktu: ${error.message}`)
     }
     return data

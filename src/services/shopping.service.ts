@@ -1,5 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
-import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
+import {normalizeName} from '@/lib/validation'
+import {validateShoppingItemInput} from '@/lib/validators/shopping.validator'
 import type {ShoppingListItem} from '@/types/database.types'
 
 export const shoppingService = {
@@ -21,25 +22,13 @@ export const shoppingService = {
     quantity: number
     unit: string
   }): Promise<ShoppingListItem> {
-    const trimmed = item.name.trim()
-    if (trimmed.length === 0) {
-      throw new Error('Nazwa pozycji nie może być pusta.')
-    }
-    if (trimmed.length > NAME_MAX_LENGTH) {
-      throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
-    }
-    if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
-      throw new Error('Ilość musi być większa od zera.')
-    }
-    if (!item.unit || item.unit.length > LIMITS.fridgeItemUnit) {
-      throw new Error(`Jednostka musi mieć od 1 do ${LIMITS.fridgeItemUnit} znaków.`)
-    }
-    const normalized = normalizeName(trimmed)
+    const validated = validateShoppingItemInput(item)
+
     const {data: existing} = await supabase
       .from('shopping_list_items')
       .select('id, name')
       .eq('household_id', item.household_id)
-      .eq('name_normalized', normalized)
+      .eq('name_normalized', normalizeName(validated.name))
       .eq('is_bought', false)
       .maybeSingle()
 
@@ -51,20 +40,16 @@ export const shoppingService = {
       .from('shopping_list_items')
       .insert({
         household_id: item.household_id,
-        name: trimmed,
-        quantity: item.quantity,
-        unit: item.unit,
+        name: validated.name,
+        quantity: validated.quantity,
+        unit: validated.unit,
       })
       .select()
       .single()
 
     if (error) {
-      if (error.code === '23505') {
-        throw new Error(`„${trimmed}” już jest na liście zakupów.`)
-      }
-      if (error.code === '23514') {
-        throw new Error('Nieprawidłowe dane pozycji.')
-      }
+      if (error.code === '23505') throw new Error(`„${validated.name}” już jest na liście zakupów.`)
+      if (error.code === '23514') throw new Error('Nieprawidłowe dane pozycji.')
       throw new Error(`Nie udało się dodać pozycji: ${error.message}`)
     }
     return data

@@ -1,4 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
+import {validateHouseholdName} from '@/lib/validators/household.validator'
 
 export interface HouseholdMember {
   user_id: string
@@ -15,8 +16,9 @@ export interface HouseholdDetails {
 
 export const householdService = {
   async createHousehold(name: string): Promise<string> {
+    const trimmed = validateHouseholdName(name)
     const {data, error} = await supabase.rpc('create_household_for_current_user', {
-      household_name: name,
+      household_name: trimmed,
     })
     if (error) throw new Error(`Nie udało się utworzyć gospodarstwa: ${error.message}`)
     return data as string
@@ -59,9 +61,10 @@ export const householdService = {
   },
 
   async rename(householdId: string, name: string): Promise<void> {
+    const trimmed = validateHouseholdName(name)
     const {error} = await supabase.rpc('rename_household', {
       p_household_id: householdId,
-      p_name: name,
+      p_name: trimmed,
     })
     if (error) throw new Error(`Nie udało się zmienić nazwy: ${error.message}`)
   },

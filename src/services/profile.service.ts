@@ -1,13 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import type {UserProfile} from '@/types/database.types'
-import {LIMITS} from '@/lib/validation'
-
-export type ProfileUpdates = Partial<Pick<UserProfile, 'first_name' | 'last_name' | 'nickname'>>
-
-function normalize(value: string | null | undefined): string | null {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : null
-}
+import {type ProfileInput, validateProfileInput} from '@/lib/validators/profile.validator'
 
 export const profileService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
@@ -20,25 +13,11 @@ export const profileService = {
     return data
   },
 
-  async updateProfile(userId: string, updates: ProfileUpdates): Promise<UserProfile> {
-    const validate = (value: string | null | undefined, max: number, label: string) => {
-      const t = value?.trim()
-      if (t && t.length > max) {
-        throw new Error(`${label} może mieć maksymalnie ${max} znaków.`)
-      }
-    }
-    validate(updates.first_name, LIMITS.profileFirstName, 'Imię')
-    validate(updates.last_name, LIMITS.profileLastName, 'Nazwisko')
-    validate(updates.nickname, LIMITS.profileNickname, 'Nickname')
-
-    const payload: ProfileUpdates = {
-      first_name: normalize(updates.first_name),
-      last_name: normalize(updates.last_name),
-      nickname: normalize(updates.nickname),
-    }
+  async updateProfile(userId: string, updates: ProfileInput): Promise<UserProfile> {
+    const validated = validateProfileInput(updates)
     const {data, error} = await supabase
       .from('profiles')
-      .update(payload)
+      .update(validated)
       .eq('id', userId)
       .select()
       .single()

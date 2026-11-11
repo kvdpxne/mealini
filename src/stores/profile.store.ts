@@ -1,6 +1,7 @@
 import {defineStore} from 'pinia'
 import {ref, watch} from 'vue'
-import {profileService, type ProfileUpdates} from '@/services/profile.service'
+import {profileService} from '@/services/profile.service'
+import type {ProfileInput} from '@/lib/validators/profile.validator'
 import type {UserProfile} from '@/types/database.types'
 import {useAuthStore} from './auth.store'
 
@@ -27,7 +28,7 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  async function update(updates: ProfileUpdates) {
+  async function update(updates: ProfileInput) {
     if (!authStore.user) return
     profile.value = await profileService.updateProfile(authStore.user.id, updates)
   }

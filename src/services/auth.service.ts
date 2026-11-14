@@ -48,14 +48,22 @@ export const authService = {
     return data.household_id
   },
 
+  async reauthenticate(): Promise<void> {
+    const {error} = await supabase.auth.reauthenticate()
+    if (error) throw new Error(`Nie udało się wysłać kodu: ${error.message}`)
+  },
+
   async resetPassword(email: string): Promise<void> {
     const redirectTo = `${window.location.origin}/reset-password`
     const {error} = await supabase.auth.resetPasswordForEmail(email, {redirectTo})
     if (error) throw new Error(`Nie udało się wysłać linku: ${error.message}`)
   },
 
-  async updatePassword(newPassword: string): Promise<void> {
-    const {error} = await supabase.auth.updateUser({password: newPassword})
+  async updatePassword(newPassword: string, nonce?: string): Promise<void> {
+    const {error} = await supabase.auth.updateUser({
+      password: newPassword,
+      ...(nonce ? {nonce} : {}),
+    })
     if (error) throw new Error(`Nie udało się zmienić hasła: ${error.message}`)
   },
 

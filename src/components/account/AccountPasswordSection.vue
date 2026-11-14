@@ -9,12 +9,23 @@ const {run} = useAsyncAction()
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
+const otp = ref('')
 const error = ref<string | null>(null)
+const needsReauth = ref(false)
 
 function reset() {
   currentPassword.value = ''
   newPassword.value = ''
   confirmPassword.value = ''
+  otp.value = ''
+  needsReauth.value = false
+  error.value = null
+}
+
+function isReauthError(e: unknown): boolean {
+  if (!(e instanceof Error)) return false
+  const msg = e.message.toLowerCase()
+  return msg.includes('reauthentication') || msg.includes('reauthenticate')
 }
 
 async function handleSubmit() {
@@ -29,15 +40,41 @@ async function handleSubmit() {
     return
   }
 
-  const result = await run(async () => {
-    // Weryfikacja obecnego hasła przez ponowne logowanie
-    await authStore.signIn(authStore.user!.email!, currentPassword.value)
-    await authStore.updatePassword(newPassword.value)
-    return true as const
-  }, {success: 'Hasło zostało zmienione'})
+  // Jeśli już jesteśmy w trybie reautoryzacji, wymagamy OTP
+  if (needsReauth.value && !otp.value.trim()) {
+    error.value = 'Wpisz kod z e-maila.'
+    return
+  }
 
-  if (result) reset()
-  else error.value = 'Nie udało się zmienić hasła'
+  try {
+    await run(async () => {
+      // Weryfikacja obecnego hasła (opcjonalna, ale daje czytelny błąd)
+      if (!needsReauth.value) {
+        await authStore.signIn(authStore.user!.email!, currentPassword.value)
+      }
+      await authStore.updatePassword(
+        newPassword.value,
+        needsReauth.value ? otp.value.trim() : undefined,
+      )
+      return true as const
+    }, {success: 'Hasło zostało zmienione'})
+    reset()
+  } catch (e) {
+    if (isReauthError(e) && !needsReauth.value) {
+      // Pierwsza próba bez nonce – wymagana reautoryzacja
+      needsReauth.value = true
+      otp.value = ''
+      try {
+        await authStore.reauthenticate()
+        error.value = 'Wysłaliśmy kod na Twój e-mail. Wpisz go poniżej, aby dokończyć zmianę hasła.'
+      } catch (reauthErr) {
+        error.value = reauthErr instanceof Error ? reauthErr.message : 'Nie udało się wysłać kodu.'
+        needsReauth.value = false
+      }
+    } else {
+      error.value = e instanceof Error ? e.message : 'Nie udało się zmienić hasła'
+    }
+  }
 }
 </script>
 
@@ -45,7 +82,7 @@ async function handleSubmit() {
   <section class="card">
     <h2>Zmiana hasła</h2>
     <form @submit.prevent="handleSubmit">
-      <label>
+      <label v-if="!needsReauth">
         Obecne hasło
         <input v-model="currentPassword" type="password" required autocomplete="current-password"/>
       </label>
@@ -69,9 +106,20 @@ async function handleSubmit() {
           autocomplete="new-password"
         />
       </label>
+
+      <template v-if="needsReauth">
+        <p class="hint">
+          Ze względów bezpieczeństwa musisz potwierdzić zmianę kodem wysłanym na e-mail.
+        </p>
+        <label>
+          Kod z e-maila
+          <input v-model="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Wpisz kod"/>
+        </label>
+      </template>
+
       <p v-if="error" class="error">{{ error }}</p>
       <button type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Zmienianie...' : 'Zmień hasło' }}
+        {{ authStore.loading ? 'Przetwarzanie...' : needsReauth ? 'Potwierdź zmianę' : 'Zmień hasło' }}
       </button>
     </form>
   </section>
@@ -124,6 +172,19 @@ button {
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.error {
+  color: #c00;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.45;
 }
 
 .error {

@@ -2,8 +2,8 @@ import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
 import type {AuthChangeEvent, Session, User} from '@supabase/supabase-js'
 import {authService} from '@/services/auth.service'
-import { setStorageUser } from '@/lib/userScopedStorage'
-import { teardownPersistedState } from '@/lib/sessionTeardown'
+import {setStorageUser} from '@/lib/userScopedStorage'
+import {teardownPersistedState} from '@/lib/sessionTeardown'
 
 export type SessionEndReason = 'voluntary' | 'expired' | null
 
@@ -101,6 +101,15 @@ export const useAuthStore = defineStore('auth', () => {
     householdId.value = await authService.getCurrentUserHouseholdId()
   }
 
+  async function reauthenticate() {
+    loading.value = true
+    try {
+      await authService.reauthenticate()
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function resetPassword(email: string) {
     loading.value = true
     try {
@@ -110,10 +119,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updatePassword(newPassword: string) {
+  async function updatePassword(newPassword: string, nonce?: string) {
     loading.value = true
     try {
-      await authService.updatePassword(newPassword)
+      await authService.updatePassword(newPassword, nonce)
     } finally {
       loading.value = false
     }
@@ -132,7 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
     session, user, householdId, initialized, loading,
     isAuthenticated, sessionEndedReason,
     initialize, signIn, signUp, signOut, refreshHouseholdId,
-    resetPassword, updatePassword, updateEmail,
+    reauthenticate, resetPassword, updatePassword, updateEmail,
     clearSessionEndedReason
   }
 })

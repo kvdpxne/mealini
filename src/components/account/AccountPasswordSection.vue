@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {ref} from 'vue'
-import {useAuthStore} from '@/stores/auth.store'
-import {useAsyncAction} from '@/composables/useAsyncAction'
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const authStore = useAuthStore()
-const {run} = useAsyncAction()
+const { run } = useAsyncAction()
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -12,6 +12,7 @@ const confirmPassword = ref('')
 const otp = ref('')
 const error = ref<string | null>(null)
 const needsReauth = ref(false)
+const needsCurrentPassword = ref(false)
 
 function reset() {
   currentPassword.value = ''
@@ -19,13 +20,17 @@ function reset() {
   confirmPassword.value = ''
   otp.value = ''
   needsReauth.value = false
+  needsCurrentPassword.value = false
   error.value = null
 }
 
-function isReauthError(e: unknown): boolean {
-  if (!(e instanceof Error)) return false
+function classifyError(e: unknown): 'reauth' | 'current_password' | 'other' {
+  if (!(e instanceof Error)) return 'other'
   const msg = e.message.toLowerCase()
-  return msg.includes('reauthentication') || msg.includes('reauthenticate')
+  if (msg.includes('reauthentication') || msg.includes('reauthenticate')) return 'reauth'
+  // Supabase zwraca "current password required" lub podobny wariant
+  if (msg.includes('current password') || msg.includes('current_password')) return 'current_password'
+  return 'other'
 }
 
 async function handleSubmit() {
@@ -39,30 +44,34 @@ async function handleSubmit() {
     error.value = 'Nowe hasła nie są identyczne.'
     return
   }
-
-  // Jeśli już jesteśmy w trybie reautoryzacji, wymagamy OTP
   if (needsReauth.value && !otp.value.trim()) {
     error.value = 'Wpisz kod z e-maila.'
+    return
+  }
+  if (needsCurrentPassword.value && !currentPassword.value) {
+    error.value = 'Wpisz obecne hasło.'
     return
   }
 
   try {
     await run(async () => {
-      // Weryfikacja obecnego hasła (opcjonalna, ale daje czytelny błąd)
-      if (!needsReauth.value) {
+      // W normalnym trybie weryfikujemy hasło przez signIn – daje czytelny błąd
+      if (!needsReauth.value && !needsCurrentPassword.value) {
         await authStore.signIn(authStore.user!.email!, currentPassword.value)
       }
-      await authStore.updatePassword(
-        newPassword.value,
-        needsReauth.value ? otp.value.trim() : undefined,
-      )
+      await authStore.updatePassword(newPassword.value, {
+        nonce: needsReauth.value ? otp.value.trim() : undefined,
+        currentPassword: needsCurrentPassword.value ? currentPassword.value : undefined,
+      })
       return true as const
-    }, {success: 'Hasło zostało zmienione'})
+    }, { success: 'Hasło zostało zmienione' })
     reset()
   } catch (e) {
-    if (isReauthError(e) && !needsReauth.value) {
-      // Pierwsza próba bez nonce – wymagana reautoryzacja
+    const kind = classifyError(e)
+
+    if (kind === 'reauth' && !needsReauth.value) {
       needsReauth.value = true
+      needsCurrentPassword.value = false
       otp.value = ''
       try {
         await authStore.reauthenticate()
@@ -71,9 +80,17 @@ async function handleSubmit() {
         error.value = reauthErr instanceof Error ? reauthErr.message : 'Nie udało się wysłać kodu.'
         needsReauth.value = false
       }
-    } else {
-      error.value = e instanceof Error ? e.message : 'Nie udało się zmienić hasła'
+      return
     }
+
+    if (kind === 'current_password' && !needsCurrentPassword.value) {
+      needsCurrentPassword.value = true
+      needsReauth.value = false
+      error.value = 'Ze względów bezpieczeństwa potwierdź zmianę obecnym hasłem.'
+      return
+    }
+
+    error.value = e instanceof Error ? e.message : 'Nie udało się zmienić hasła'
   }
 }
 </script>
@@ -82,29 +99,22 @@ async function handleSubmit() {
   <section class="card">
     <h2>Zmiana hasła</h2>
     <form @submit.prevent="handleSubmit">
-      <label v-if="!needsReauth">
+      <label v-if="!needsReauth || needsCurrentPassword">
         Obecne hasło
-        <input v-model="currentPassword" type="password" required autocomplete="current-password"/>
+        <input
+          v-model="currentPassword"
+          type="password"
+          :required="!needsReauth || needsCurrentPassword"
+          autocomplete="current-password"
+        />
       </label>
       <label>
         Nowe hasło
-        <input
-          v-model="newPassword"
-          type="password"
-          required
-          minlength="6"
-          autocomplete="new-password"
-        />
+        <input v-model="newPassword" type="password" required minlength="6" autocomplete="new-password" />
       </label>
       <label>
         Potwierdź nowe hasło
-        <input
-          v-model="confirmPassword"
-          type="password"
-          required
-          minlength="6"
-          autocomplete="new-password"
-        />
+        <input v-model="confirmPassword" type="password" required minlength="6" autocomplete="new-password" />
       </label>
 
       <template v-if="needsReauth">
@@ -113,7 +123,7 @@ async function handleSubmit() {
         </p>
         <label>
           Kod z e-maila
-          <input v-model="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Wpisz kod"/>
+          <input v-model="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Wpisz kod" />
         </label>
       </template>
 

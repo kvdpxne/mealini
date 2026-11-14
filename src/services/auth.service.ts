@@ -59,12 +59,18 @@ export const authService = {
     if (error) throw new Error(`Nie udało się wysłać linku: ${error.message}`)
   },
 
-  async updatePassword(newPassword: string, nonce?: string): Promise<void> {
-    const {error} = await supabase.auth.updateUser({
+  async updatePassword(
+    newPassword: string,
+    opts: { nonce?: string; currentPassword?: string } = {},
+  ): Promise<void> {
+    const payload: { password: string; nonce?: string; current_password?: string } = {
       password: newPassword,
-      ...(nonce ? {nonce} : {}),
-    })
-    if (error) throw new Error(`Nie udało się zmienić hasła: ${error.message}`)
+    }
+    if (opts.nonce) payload.nonce = opts.nonce
+    if (opts.currentPassword) payload.current_password = opts.currentPassword
+
+    const {error} = await supabase.auth.updateUser(payload)
+    if (error) throw error
   },
 
   async updateEmail(newEmail: string): Promise<void> {

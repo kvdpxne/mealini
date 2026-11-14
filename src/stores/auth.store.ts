@@ -119,10 +119,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updatePassword(newPassword: string, nonce?: string) {
+  async function updatePassword(
+    newPassword: string,
+    opts: { nonce?: string; currentPassword?: string } = {},
+  ) {
     loading.value = true
     try {
-      await authService.updatePassword(newPassword, nonce)
+      await authService.updatePassword(newPassword, opts)
     } finally {
       loading.value = false
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {storeToRefs} from 'pinia'
-import {Package, Plus} from 'lucide-vue-next'
+import {Package, Plus, Link2} from 'lucide-vue-next'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useShoppingView} from '@/composables/useShoppingView'
 import ShoppingStoreBar from '@/components/shopping/ShoppingStoreBar.vue'
@@ -17,6 +17,7 @@ import ErrorBanner from '@/components/shared/ErrorBanner.vue'
 import {useShoppingSetsStore} from '@/stores/shoppingSets.store'
 import SaveCurrentListModal from '@/components/shopping/SaveCurrentListModal.vue'
 import AddFromSetModal from '@/components/shopping/AddFromSetModal.vue'
+import ShareShoppingListModal from '@/components/shopping/ShareShoppingListModal.vue'
 
 const shoppingStore = useShoppingStore()
 const {error} = storeToRefs(shoppingStore)
@@ -24,6 +25,7 @@ const {error} = storeToRefs(shoppingStore)
 const shoppingSetsStore = useShoppingSetsStore()
 const showSaveSet = ref(false)
 const showAddFromSet = ref(false)
+const showShare = ref(false)
 
 const hasSetToOffer = computed(() => shoppingSetsStore.sets.length > 0)
 const hasItemsToSave = computed(() => toBuy.value.length > 0)
@@ -91,6 +93,11 @@ const {
         <h2>Do kupienia <span v-if="toBuy.length" class="count">({{ toBuy.length }})</span></h2>
 
         <div class="bulk-actions">
+          <button class="secondary" :disabled="!isOnline" @click="showShare = true">
+            <Link2 :size="14" />
+            <span>Udostępnij</span>
+          </button>
+
           <button
             v-if="hasItemsToSave"
             class="secondary"
@@ -157,6 +164,7 @@ const {
     <SaveCurrentListModal :visible="showSaveSet" @close="showSaveSet = false"/>
     <AddFromSetModal :visible="showAddFromSet" @close="showAddFromSet = false"/>
   </div>
+  <ShareShoppingListModal :visible="showShare" @close="showShare = false" />
 </template>
 
 <style scoped>
@@ -180,6 +188,7 @@ const {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 .secondary {

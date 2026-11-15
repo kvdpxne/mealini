@@ -7,6 +7,7 @@ const router = createRouter({
     {path: '/login', component: () => import('@/views/LoginView.vue'), meta: {public: true}},
     {path: '/forgot-password', component: () => import('@/views/ForgotPasswordView.vue'), meta: {public: true}},
     {path: '/reset-password', component: () => import('@/views/ResetPasswordView.vue'), meta: {public: true}},
+    {path: '/share/:token', component: () => import('@/views/SharedListView.vue'), meta: {public: true}},
     {path: '/account', component: () => import('@/views/AccountSettingsView.vue')},
     {path: '/household', component: () => import('@/views/HouseholdSettingsView.vue')},
     {path: '/onboarding', component: () => import('@/views/OnboardingView.vue')},

@@ -26,7 +26,6 @@ async function handleLogout() {
       <nav class="nav">
         <RouterLink to="/" active-class="active">Lodówka</RouterLink>
         <RouterLink to="/recipes" active-class="active">Przepisy</RouterLink>
-        <RouterLink to="/ai" active-class="active">AI</RouterLink>
         <RouterLink to="/shopping" active-class="active">Zakupy</RouterLink>
         <RouterLink to="/sets" active-class="active">Zestawy</RouterLink>
         <RouterLink to="/stores" active-class="active">Sklepy</RouterLink>

@@ -39,12 +39,7 @@ async function handleAskAi() {
 </script>
 
 <template>
-  <div class="ai-view">
-    <header class="page-head">
-      <h1>Asystent AI</h1>
-      <p class="sub">Wygeneruj prompt z zawartości lodówki lub zapytaj AI bezpośrednio.</p>
-    </header>
-
+  <div class="ai-tab">
     <section class="card">
       <h2>
         <Copy :size="18"/>
@@ -82,23 +77,11 @@ async function handleAskAi() {
 </template>
 
 <style scoped>
-.ai-view {
+.ai-tab {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   max-width: 720px;
-  margin: 0 auto;
-}
-
-.page-head h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.sub {
-  margin: 0.25rem 0 0;
-  color: #6b7280;
-  font-size: 0.9rem;
 }
 
 .card {

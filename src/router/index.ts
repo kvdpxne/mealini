@@ -19,7 +19,6 @@ const router = createRouter({
     {path: '/recipes/new', name: 'recipe-new', component: () => import('@/views/RecipeFormView.vue')},
     {path: '/recipes/:id/edit', name: 'recipe-edit', component: () => import('@/views/RecipeFormView.vue')},
     {path: '/recipes/:id', name: 'recipe-detail', component: () => import('@/views/RecipeDetailView.vue')},
-    {path: '/ai', component: () => import('@/views/AiChefView.vue')},
     {path: '/', component: () => import('@/views/FridgeView.vue')},
   ],
 })

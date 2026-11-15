@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import {ChefHat, Home, Package, Refrigerator, ShoppingCart, Sparkles, Store, User} from 'lucide-vue-next'
+import {ChefHat, Home, Package, Refrigerator, ShoppingCart, Store, User} from 'lucide-vue-next'
 import {RouterLink} from 'vue-router'
 
 const items = [
   {to: '/', label: 'Lodówka', icon: Refrigerator, exact: true},
   {to: '/recipes', label: 'Przepisy', icon: ChefHat, exact: false},
-  {to: '/ai', label: 'AI', icon: Sparkles, exact: false},
   {to: '/shopping', label: 'Zakupy', icon: ShoppingCart, exact: false},
-  {to: '/sets', label: 'Zakupy', icon: Package, exact: false},
+  {to: '/sets', label: 'Zestawy', icon: Package, exact: false},
   {to: '/stores', label: 'Sklepy', icon: Store, exact: false},
   {to: '/household', label: 'Dom', icon: Home, exact: false},
   {to: '/account', label: 'Konto', icon: User, exact: false},

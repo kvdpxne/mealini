@@ -13,6 +13,8 @@ const router = createRouter({
     {path: '/shopping', component: () => import('@/views/ShoppingListView.vue')},
     {path: '/stores', component: () => import('@/views/StoresListView.vue')},
     {path: '/stores/:id', component: () => import('@/views/StoreDetailView.vue')},
+    {path: '/recipes', component: () => import('@/views/RecipesView.vue')},
+    {path: '/ai', component: () => import('@/views/AiChefView.vue')},
     {path: '/', component: () => import('@/views/FridgeView.vue')},
   ],
 })

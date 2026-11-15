@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {Home, Refrigerator, ShoppingCart, Store, User, ChefHat, Sparkles} from 'lucide-vue-next'
+import {ChefHat, Home, Package, Refrigerator, ShoppingCart, Sparkles, Store, User} from 'lucide-vue-next'
 import {RouterLink} from 'vue-router'
 
 const items = [
@@ -7,6 +7,7 @@ const items = [
   {to: '/recipes', label: 'Przepisy', icon: ChefHat, exact: false},
   {to: '/ai', label: 'AI', icon: Sparkles, exact: false},
   {to: '/shopping', label: 'Zakupy', icon: ShoppingCart, exact: false},
+  {to: '/sets', label: 'Zakupy', icon: Package, exact: false},
   {to: '/stores', label: 'Sklepy', icon: Store, exact: false},
   {to: '/household', label: 'Dom', icon: Home, exact: false},
   {to: '/account', label: 'Konto', icon: User, exact: false},

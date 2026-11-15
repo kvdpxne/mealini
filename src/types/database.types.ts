@@ -61,3 +61,29 @@ export interface ProductLocation {
   product_name_normalized: string
   created_at: string
 }
+
+export interface ShoppingSet {
+  id: string
+  household_id: string
+  name: string
+  name_normalized: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ShoppingSetItem {
+  id: string
+  set_id: string
+  name: string
+  name_normalized: string
+  quantity: number
+  unit: string
+  sort_order: number
+  created_at: string
+}
+
+export interface ApplySetResult {
+  added: number
+  merged: number
+  skipped: Array<{ name: string; reason: string }>
+}

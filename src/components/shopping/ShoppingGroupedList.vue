@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import {Trash2} from 'lucide-vue-next'
 import ZoneSelect from './ZoneSelect.vue'
+import InlineEdit from '@/components/shared/InlineEdit.vue'
 import type {ShoppingListItem, StoreZone} from '@/types/database.types'
 import type {ZoneGroup} from '@/composables/useShoppingLocationGroups'
-import {formatQuantity} from '@/lib/quantity'
+import {formatQuantityParts} from '@/lib/quantity'
+import {displayStepForUnit} from '@/lib/units'
+import {NAME_MAX_LENGTH} from '@/lib/validation'
 
 defineProps<{
   groups: ZoneGroup[]
@@ -17,7 +20,18 @@ const emit = defineEmits<{
   (e: 'toggle', id: string): void
   (e: 'delete', id: string): void
   (e: 'set-zone', itemName: string, zoneId: string | null): void
+  (e: 'update-name', id: string, name: string): void
+  (e: 'update-quantity', id: string, quantity: number, unit: string): void
 }>()
+
+function displayQty(item: ShoppingListItem) {
+  return formatQuantityParts(item.quantity, item.unit)
+}
+
+function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
+  const parts = displayQty(item)
+  emit('update-quantity', item.id, newValue, parts.unit)
+}
 </script>
 
 <template>
@@ -28,16 +42,36 @@ const emit = defineEmits<{
     </h3>
     <ul class="zone-items">
       <li v-for="item in group.items" :key="item.id">
-        <label>
+        <label class="check">
           <input
             type="checkbox"
             :checked="item.is_bought"
             :disabled="!isOnline"
             @change="emit('toggle', item.id)"
           />
-          <span>{{ item.name }}</span>
-          <span class="qty">{{ formatQuantity(item.quantity, item.unit) }}</span>
         </label>
+
+        <div class="content">
+          <InlineEdit
+            :model-value="item.name"
+            type="text"
+            :maxlength="NAME_MAX_LENGTH"
+            :disabled="!isOnline"
+            emphasis
+            @update="emit('update-name', item.id, $event as string)"
+          />
+          <InlineEdit
+            :model-value="displayQty(item).value"
+            type="number"
+            :min="0.01"
+            :step="displayStepForUnit(displayQty(item).unit)"
+            :suffix="displayQty(item).unit"
+            :disabled="!isOnline"
+            variant="muted"
+            @update="handleQtyUpdate(item, $event as number)"
+          />
+        </div>
+
         <div class="zone-actions">
           <ZoneSelect
             :zones="zones"
@@ -87,24 +121,25 @@ const emit = defineEmits<{
 
 .zone-items li {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: #fff;
   border-radius: 6px;
 }
 
-.zone-items label {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.check {
+  display: inline-flex;
   cursor: pointer;
-  flex: 1;
 }
 
-.qty {
-  color: #6b7280;
-  font-size: 0.85rem;
+.content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .zone-actions {

@@ -69,6 +69,35 @@ export const useShoppingStore = defineStore(
       if (idx !== -1) items.value[idx] = updated
     }
 
+    async function updateItem(
+      id: string,
+      updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit'>>,
+    ) {
+      const previous = items.value.find(i => i.id === id)
+      if (!previous) return
+
+      const optimisticIdx = items.value.findIndex(i => i.id === id)
+      items.value[optimisticIdx] = {...previous, ...updates}
+
+      try {
+        const updated = await shoppingService.updateItem(id, updates)
+        const confirmIdx = items.value.findIndex(i => i.id === id)
+        if (confirmIdx !== -1) items.value[confirmIdx] = updated
+      } catch (e) {
+        const rollbackIdx = items.value.findIndex(i => i.id === id)
+        if (rollbackIdx !== -1) items.value[rollbackIdx] = previous
+        throw e
+      }
+    }
+
+    async function updateName(id: string, name: string) {
+      await updateItem(id, {name})
+    }
+
+    async function updateQuantity(id: string, quantity: number, unit: string) {
+      await updateItem(id, {quantity, unit})
+    }
+
     async function deleteItem(id: string): Promise<ShoppingListItem | undefined> {
       const idx = items.value.findIndex(i => i.id === id)
       if (idx === -1) return undefined
@@ -128,8 +157,9 @@ export const useShoppingStore = defineStore(
       items, suggestions, loading, error,
       toBuy, bought,
       fetchItems, fetchSuggestions, clearError,
-      addItem, toggleBought, deleteItem, clearBought,
-      restoreItem, moveToFridge, moveAllBoughtToFridge,
+      addItem, toggleBought, updateItem, updateName, updateQuantity,
+      deleteItem, clearBought, restoreItem,
+      moveToFridge, moveAllBoughtToFridge,
       $reset
     }
   }, {

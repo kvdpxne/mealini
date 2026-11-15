@@ -1,5 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
-import {normalizeName} from '@/lib/validation'
+import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
 import {validateShoppingItemInput} from '@/lib/validators/shopping.validator'
 import type {ShoppingListItem} from '@/types/database.types'
 
@@ -70,6 +70,70 @@ export const shoppingService = {
           'Usuń go lub zmień nazwę, aby przywrócić tę pozycję.',
         )
       }
+      throw new Error(`Nie udało się zaktualizować pozycji: ${error.message}`)
+    }
+    return data
+  },
+
+  async updateItem(
+    id: string,
+    updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit'>>,
+  ): Promise<ShoppingListItem> {
+    const payload: Partial<ShoppingListItem> = {...updates}
+
+    if (payload.name !== undefined) {
+      const trimmed = payload.name.trim()
+      if (!trimmed) throw new Error('Nazwa pozycji nie może być pusta.')
+      if (trimmed.length > NAME_MAX_LENGTH) {
+        throw new Error(`Nazwa może mieć maksymalnie ${NAME_MAX_LENGTH} znaków.`)
+      }
+      payload.name = trimmed
+    }
+    if (payload.quantity !== undefined) {
+      if (!Number.isFinite(payload.quantity) || payload.quantity <= 0) {
+        throw new Error('Ilość musi być większa od zera.')
+      }
+    }
+    if (payload.unit !== undefined) {
+      if (!payload.unit.trim() || payload.unit.length > LIMITS.fridgeItemUnit) {
+        throw new Error('Nieprawidłowa jednostka.')
+      }
+    }
+
+    // Duplikat sprawdzamy tylko dla "do kupienia" (partial unique index)
+    if (payload.name !== undefined) {
+      const {data: current} = await supabase
+        .from('shopping_list_items')
+        .select('household_id, is_bought')
+        .eq('id', id)
+        .single()
+
+      if (current && !current.is_bought) {
+        const {data: existing} = await supabase
+          .from('shopping_list_items')
+          .select('id, name')
+          .eq('household_id', current.household_id)
+          .eq('name_normalized', normalizeName(payload.name))
+          .eq('is_bought', false)
+          .neq('id', id)
+          .maybeSingle()
+
+        if (existing) {
+          throw new Error(`„${existing.name}" już jest na liście zakupów.`)
+        }
+      }
+    }
+
+    const {data, error} = await supabase
+      .from('shopping_list_items')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === '23505') throw new Error('Pozycja o tej nazwie już istnieje na liście.')
+      if (error.code === '23514') throw new Error('Nieprawidłowe dane pozycji.')
       throw new Error(`Nie udało się zaktualizować pozycji: ${error.message}`)
     }
     return data

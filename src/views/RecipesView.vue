@@ -1,50 +1,32 @@
 <script setup lang="ts">
-import {onMounted} from 'vue'
-import {useRecipeSuggestions} from '@/composables/useRecipeSuggestions'
-import SkeletonList from '@/components/shared/SkeletonList.vue'
-import ErrorBanner from '@/components/shared/ErrorBanner.vue'
-import {Search} from 'lucide-vue-next'
+import {ref} from 'vue'
+import {BookOpen, Utensils} from 'lucide-vue-next'
+import MyRecipesTab from '@/components/recipes/MyRecipesTab.vue'
+import SpoonacularTab from '@/components/recipes/SpoonacularTab.vue'
 
-const {recipes, loading, error, search} = useRecipeSuggestions()
-
-onMounted(search)
+const activeTab = ref<'my' | 'spoonacular'>('my')
 </script>
 
 <template>
   <div class="recipes-view">
-    <header class="page-head">
-      <div>
-        <h1>Co ugotować?</h1>
-        <p class="sub">Przepisy dopasowane do zawartości Twojej lodówki.</p>
-      </div>
-      <button class="primary" :disabled="loading" @click="search">
-        <Search :size="16"/>
-        <span>{{ loading ? 'Szukanie...' : 'Odśwież' }}</span>
-      </button>
+    <header>
+      <h1>Przepisy</h1>
+      <p class="sub">Twoje przepisy oraz inspiracje z zawartości lodówki.</p>
     </header>
 
-    <ErrorBanner v-if="error" :message="error" @dismiss="error = null"/>
-
-    <SkeletonList v-if="loading" :count="5"/>
-
-    <div v-else-if="recipes.length === 0" class="empty">
-      Brak przepisów. Dodaj więcej produktów do lodówki lub spróbuj ponownie później.
+    <div class="tabs">
+      <button :class="['tab', { active: activeTab === 'my' }]" @click="activeTab = 'my'">
+        <BookOpen :size="16"/>
+        <span>Moje przepisy</span>
+      </button>
+      <button :class="['tab', { active: activeTab === 'spoonacular' }]" @click="activeTab = 'spoonacular'">
+        <Utensils :size="16"/>
+        <span>Z lodówki</span>
+      </button>
     </div>
 
-    <ul v-else class="recipe-grid">
-      <li v-for="r in recipes" :key="r.id" class="recipe-card">
-        <img :src="r.image" :alt="r.title" loading="lazy"/>
-        <div class="recipe-body">
-          <h3>{{ r.title }}</h3>
-          <p class="meta">
-            Wykorzystasz <strong>{{ r.usedIngredientCount }}</strong> składników z lodówki
-          </p>
-          <p v-if="r.missedIngredientCount > 0" class="missed">
-            Brakuje: {{ r.missedIngredients.map(i => i.name).join(', ') }}
-          </p>
-        </div>
-      </li>
-    </ul>
+    <MyRecipesTab v-if="activeTab === 'my'"/>
+    <SpoonacularTab v-else/>
   </div>
 </template>
 
@@ -55,15 +37,7 @@ onMounted(search)
   gap: 1rem;
 }
 
-.page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.page-head h1 {
+.recipes-view h1 {
   margin: 0;
   font-size: 1.5rem;
 }
@@ -74,74 +48,33 @@ onMounted(search)
   font-size: 0.9rem;
 }
 
-.primary {
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tab {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  background: #0a7;
-  color: #fff;
+  padding: 0.6rem 1rem;
+  background: transparent;
   border: none;
-  border-radius: 6px;
+  border-bottom: 2px solid transparent;
   cursor: pointer;
-}
-
-.primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.empty {
-  text-align: center;
+  font-size: 0.9rem;
   color: #6b7280;
-  padding: 3rem 1rem;
+  margin-bottom: -1px;
 }
 
-.recipe-grid {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
+.tab:hover {
+  color: #111;
 }
 
-.recipe-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.recipe-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-.recipe-body {
-  padding: 0.75rem 1rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.recipe-body h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.meta {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.missed {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #b45309;
+.tab.active {
+  color: #0a7;
+  border-bottom-color: #0a7;
+  font-weight: 500;
 }
 </style>

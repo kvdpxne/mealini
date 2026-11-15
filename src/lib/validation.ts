@@ -10,6 +10,9 @@ export const LIMITS = {
   storeName: 60,
   storeZoneName: 40,
   note: 200,
+  recipeName: 100,
+  recipeDescription: 1000,
+  recipeInstructions: 5000,
 } as const
 
 /** @deprecated - użyj LIMITS.fridgeItemName / LIMITS.shoppingItemName. */

@@ -89,3 +89,32 @@ export interface ApplySetResult {
   merged: number
   skipped: Array<{ name: string; reason: string }>
 }
+
+export interface Recipe {
+  id: string
+  household_id: string
+  name: string
+  name_normalized: string
+  description: string | null
+  instructions: string | null
+  servings: number | null
+  prep_time_minutes: number | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RecipeIngredient {
+  id: string
+  recipe_id: string
+  name: string
+  name_normalized: string
+  quantity: number
+  unit: string
+  sort_order: number
+  created_at: string
+}
+
+export interface RecipeWithIngredients extends Recipe {
+  ingredients: RecipeIngredient[]
+}

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   (e: 'clear'): void
   (e: 'update-name', id: string, name: string): void
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
+  (e: 'update-note', id: string, note: string | null): void
 }>()
 </script>
 
@@ -44,6 +45,7 @@ const emit = defineEmits<{
       @move-to-fridge="emit('move-to-fridge', $event)"
       @update-name="(id, name) => emit('update-name', id, name)"
       @update-quantity="(id, qty, unit) => emit('update-quantity', id, qty, unit)"
+      @update-note="(id, note) => emit('update-note', id, note)"
     />
   </section>
 </template>

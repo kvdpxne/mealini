@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import {UNITS} from '@/lib/units'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
 
 defineProps<{
   name: string
   quantity: number
   unit: string
+  note: string
   disabled?: boolean
 }>()
 
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'update:name', v: string): void
   (e: 'update:quantity', v: number): void
   (e: 'update:unit', v: string): void
+  (e: 'update:note', v: string): void
   (e: 'submit'): void
 }>()
 </script>
@@ -44,6 +46,14 @@ const emit = defineEmits<{
     >
       <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
     </select>
+    <input
+      :value="note"
+      type="text"
+      :maxlength="LIMITS.note"
+      placeholder="Notatka (opcjonalnie)"
+      class="add-form__note"
+      @input="emit('update:note', ($event.target as HTMLInputElement).value)"
+    />
     <button type="submit" :disabled="disabled">Dodaj</button>
   </form>
 </template>
@@ -74,6 +84,14 @@ const emit = defineEmits<{
   padding: 0.5rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
+}
+
+.add-form__note {
+  flex: 1 1 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
 .add-form button {

@@ -3,10 +3,12 @@ import {nextTick, ref, watch} from 'vue'
 import {X} from 'lucide-vue-next'
 import {UNITS} from '@/lib/units'
 import {PRODUCT_CATEGORIES} from '@/lib/productCategories'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS} from '@/lib/validation'
 import type {FridgeItem} from '@/types/database.types'
 
-type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category'>>
+type FridgeItemUpdates = Partial<
+  Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category' | 'note'>
+>
 
 const props = defineProps<{ item: FridgeItem | null; submitting?: boolean }>()
 const emit = defineEmits<{
@@ -20,6 +22,7 @@ const quantity = ref<number>(1)
 const unit = ref<string>('szt')
 const expiryDate = ref('')
 const nameInput = ref<HTMLInputElement | null>(null)
+const note = ref('')
 
 watch(
   () => props.item,
@@ -33,6 +36,7 @@ watch(
     await nextTick()
     nameInput.value?.focus()
     nameInput.value?.select()
+    note.value = item.note ?? ''
   },
   {immediate: true},
 )
@@ -45,6 +49,7 @@ function handleSubmit() {
     quantity: quantity.value,
     unit: unit.value,
     expiry_date: expiryDate.value || null,
+    note: note.value.trim() || null,
   })
 }
 
@@ -76,7 +81,7 @@ function handleKeydown(e: KeyboardEvent) {
 
         <label>
           Nazwa
-          <input ref="nameInput" v-model="name" type="text" :maxlength="NAME_MAX_LENGTH" required/>
+          <input ref="nameInput" v-model="name" type="text" :maxlength="LIMITS.fridgeItemName" required/>
         </label>
 
         <div class="row">
@@ -103,6 +108,11 @@ function handleKeydown(e: KeyboardEvent) {
         <label>
           Data ważności (opcjonalnie)
           <input v-model="expiryDate" type="date"/>
+        </label>
+
+        <label>
+          Notatka (opcjonalnie)
+          <input v-model="note" type="text" :maxlength="LIMITS.note" placeholder="np. kup bez laktozy" />
         </label>
 
         <div class="actions">

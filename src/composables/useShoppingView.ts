@@ -42,6 +42,7 @@ export function useShoppingView() {
   const newItem = ref('')
   const newQuantity = ref(1)
   const newUnit = ref('szt')
+  const newNote = ref('')
 
   const {toBuy, bought, isSearchActive} = useShoppingItems(items, search)
 
@@ -104,6 +105,7 @@ export function useShoppingView() {
         newItem.value,
         newQuantity.value,
         newUnit.value,
+        newNote.value.trim() || null,
       )
       return true as const
     }, {success: 'Dodano do listy'})
@@ -111,6 +113,7 @@ export function useShoppingView() {
       newItem.value = ''
       newQuantity.value = 1
       newUnit.value = 'szt'
+      newNote.value = ''
     }
   }
 
@@ -139,6 +142,13 @@ export function useShoppingView() {
   async function handleUpdateQuantity(id: string, quantity: number, unit: string) {
     await run(async () => {
       await shoppingStore.updateQuantity(id, quantity, unit)
+      return true as const
+    })
+  }
+
+  async function handleUpdateNote(id: string, note: string | null) {
+    await run(async () => {
+      await shoppingStore.updateNote(id, note)
       return true as const
     })
   }
@@ -234,13 +244,13 @@ export function useShoppingView() {
     items, suggestions, error, loading,
     stores, zones, currentMapUrl,
     isOnline, preferences, movingAll,
-    search, newItem, newQuantity, newUnit,
+    search, newItem, newQuantity, newUnit, newNote,
     toBuy, bought, isSearchActive,
     activeStoreId, activeStore, routeSortEnabled, useGroupedView, showBoughtSection,
     groups, zoneIdFor,
     selectStore, handleToggleRouteSort,
     handleAdd, handleQuickAdd, handleToggle,
-    handleUpdateName, handleUpdateQuantity,
+    handleUpdateName, handleUpdateQuantity, handleUpdateNote,
     handleDelete, handleClear,
     handleMoveToFridge, handleMoveAllBought, handleSetZone,
     clearError: shoppingStore.clearError,

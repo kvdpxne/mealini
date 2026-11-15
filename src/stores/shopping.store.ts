@@ -50,12 +50,14 @@ export const useShoppingStore = defineStore(
       name: string,
       quantity = 1,
       unit = 'szt',
+      note: string | null = null,
     ) {
       const created = await shoppingService.addItem({
         household_id: householdId,
         name,
         quantity,
         unit,
+        note,
       })
       items.value.unshift(created)
       await fetchSuggestions(householdId)
@@ -71,7 +73,7 @@ export const useShoppingStore = defineStore(
 
     async function updateItem(
       id: string,
-      updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit'>>,
+      updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit' | 'note'>>,
     ) {
       const previous = items.value.find(i => i.id === id)
       if (!previous) return
@@ -96,6 +98,10 @@ export const useShoppingStore = defineStore(
 
     async function updateQuantity(id: string, quantity: number, unit: string) {
       await updateItem(id, {quantity, unit})
+    }
+
+    async function updateNote(id: string, note: string | null) {
+      await updateItem(id, { note })
     }
 
     async function deleteItem(id: string): Promise<ShoppingListItem | undefined> {
@@ -157,7 +163,7 @@ export const useShoppingStore = defineStore(
       items, suggestions, loading, error,
       toBuy, bought,
       fetchItems, fetchSuggestions, clearError,
-      addItem, toggleBought, updateItem, updateName, updateQuantity,
+      addItem, toggleBought, updateItem, updateName, updateQuantity, updateNote,
       deleteItem, clearBought, restoreItem,
       moveToFridge, moveAllBoughtToFridge,
       $reset

@@ -1,5 +1,5 @@
 import {supabase} from '@/lib/supabaseClient'
-import { LIMITS, NAME_MAX_LENGTH, normalizeName } from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH, normalizeName} from '@/lib/validation'
 import {validateShoppingItemInput} from '@/lib/validators/shopping.validator'
 import type {ShoppingListItem} from '@/types/database.types'
 
@@ -21,8 +21,14 @@ export const shoppingService = {
     name: string
     quantity: number
     unit: string
+    note?: string | null
   }): Promise<ShoppingListItem> {
-    const validated = validateShoppingItemInput(item)
+    const validated = validateShoppingItemInput({
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      note: item.note ?? null,
+    })
 
     const {data: existing} = await supabase
       .from('shopping_list_items')
@@ -43,6 +49,7 @@ export const shoppingService = {
         name: validated.name,
         quantity: validated.quantity,
         unit: validated.unit,
+        note: validated.note ?? null,
       })
       .select()
       .single()
@@ -77,7 +84,7 @@ export const shoppingService = {
 
   async updateItem(
     id: string,
-    updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit'>>,
+    updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit' | 'note'>>,
   ): Promise<ShoppingListItem> {
     const payload: Partial<ShoppingListItem> = {...updates}
 

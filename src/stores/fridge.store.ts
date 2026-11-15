@@ -4,7 +4,9 @@ import type {FridgeItem} from '@/types/database.types'
 import {fridgeService} from '@/services/fridge.service'
 import {userScopedStorage} from '@/lib/userScopedStorage'
 
-type FridgeItemUpdates = Partial<Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date'>>
+type FridgeItemUpdates = Partial<
+  Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category' | 'note'>
+>
 
 export const useFridgeStore = defineStore('fridge', () => {
   const items = ref<FridgeItem[]>([])
@@ -85,6 +87,10 @@ export const useFridgeStore = defineStore('fridge', () => {
     await updateItem(id, {name})
   }
 
+  async function updateNote(id: string, note: string | null) {
+    await updateItem(id, {note})
+  }
+
   function $reset() {
     items.value = []
     loading.value = false
@@ -93,7 +99,7 @@ export const useFridgeStore = defineStore('fridge', () => {
 
   return {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
-    restoreItem, moveToShopping, updateItem, updateQuantity, updateName,
+    restoreItem, moveToShopping, updateItem, updateQuantity, updateName, updateNote,
     $reset
   }
 }, {

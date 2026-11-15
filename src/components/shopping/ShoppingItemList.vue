@@ -5,7 +5,7 @@ import InlineEdit from '@/components/shared/InlineEdit.vue'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
 import {formatQuantityParts} from '@/lib/quantity'
 import {displayStepForUnit} from '@/lib/units'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
 
 withDefaults(defineProps<{
   items: ShoppingListItem[]
@@ -23,6 +23,7 @@ const emit = defineEmits<{
   (e: 'move-to-fridge', id: string): void
   (e: 'update-name', id: string, name: string): void
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
+  (e: 'update-note', id: string, note: string | null): void
 }>()
 
 function displayQty(item: ShoppingListItem) {
@@ -32,6 +33,11 @@ function displayQty(item: ShoppingListItem) {
 function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
   const parts = displayQty(item)
   emit('update-quantity', item.id, newValue, parts.unit)
+}
+
+function handleNoteUpdate(id: string, newValue: string) {
+  const note = newValue.trim() || null
+  emit('update-note', id, note)
 }
 </script>
 
@@ -50,28 +56,44 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
       </label>
 
       <div class="content">
-        <InlineEdit
-          v-if="editable && !disabled"
-          :model-value="item.name"
-          type="text"
-          :maxlength="NAME_MAX_LENGTH"
-          @update="emit('update-name', item.id, $event as string)"
-        />
-        <span v-else class="name">{{ item.name }}</span>
+        <div class="main-line">
+          <InlineEdit
+            v-if="editable && !disabled"
+            :model-value="item.name"
+            type="text"
+            :maxlength="NAME_MAX_LENGTH"
+            @update="emit('update-name', item.id, $event as string)"
+          />
+          <span v-else class="name">{{ item.name }}</span>
 
-        <InlineEdit
-          v-if="editable && !disabled"
-          :model-value="displayQty(item).value"
-          type="number"
-          :min="0.01"
-          :step="displayStepForUnit(displayQty(item).unit)"
-          :suffix="displayQty(item).unit"
-          variant="muted"
-          @update="handleQtyUpdate(item, $event as number)"
-        />
-        <span v-else class="qty">
-          {{ displayQty(item).value }} {{ displayQty(item).unit }}
-        </span>
+          <InlineEdit
+            v-if="editable && !disabled"
+            :model-value="displayQty(item).value"
+            type="number"
+            :min="0.01"
+            :step="displayStepForUnit(displayQty(item).unit)"
+            :suffix="displayQty(item).unit"
+            variant="muted"
+            @update="handleQtyUpdate(item, $event as number)"
+          />
+          <span v-else class="qty">
+            {{ displayQty(item).value }} {{ displayQty(item).unit }}
+          </span>
+        </div>
+
+        <div class="note-line">
+          <InlineEdit
+            v-if="editable && !disabled"
+            :model-value="item.note ?? ''"
+            type="text"
+            :maxlength="LIMITS.note"
+            variant="note"
+            placeholder="Dodaj notatkę"
+            allow-empty
+            @update="handleNoteUpdate(item.id, $event as string)"
+          />
+          <span v-else-if="item.note" class="note">{{ item.note }}</span>
+        </div>
       </div>
 
       <div class="actions">
@@ -104,7 +126,7 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
 
 .list li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: #fff;
@@ -120,18 +142,30 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
   opacity: 0.6;
 }
 
+.list li.bought .note {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
 .check {
   display: inline-flex;
   cursor: pointer;
+  padding-top: 0.25rem;
 }
 
 .content {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.main-line {
+  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.5rem;
-  min-width: 0;
 }
 
 .name {
@@ -141,6 +175,16 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
 .qty {
   color: #6b7280;
   font-size: 0.85rem;
+}
+
+.note-line {
+  padding-left: 0.15rem;
+}
+
+.note {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .actions {

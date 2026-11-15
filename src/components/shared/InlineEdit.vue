@@ -10,14 +10,16 @@ const props = withDefaults(defineProps<{
   suffix?: string
   disabled?: boolean
   emphasis?: boolean
-  variant?: 'default' | 'muted'
+  variant?: 'default' | 'muted' | 'note'
   placeholder?: string
+  allowEmpty?: boolean
 }>(), {
   type: 'text',
   disabled: false,
   emphasis: false,
   variant: 'default',
   placeholder: '(brak)',
+  allowEmpty: false,
 })
 
 const emit = defineEmits<{ (e: 'update', value: string | number): void }>()
@@ -26,9 +28,14 @@ const editing = ref(false)
 const draft = ref<string | number>(props.modelValue)
 const inputEl = ref<HTMLInputElement | null>(null)
 
-const displayText = computed(() => {
+const isEmpty = computed(() => {
   const v = props.modelValue
-  if (v === '' || v === null || v === undefined) return props.placeholder
+  return v === '' || v === null || v === undefined
+})
+
+const displayText = computed(() => {
+  if (isEmpty.value) return props.placeholder
+  const v = props.modelValue
   return props.suffix ? `${v} ${props.suffix}` : String(v)
 })
 
@@ -38,7 +45,7 @@ async function startEdit() {
   editing.value = true
   await nextTick()
   inputEl.value?.focus()
-  inputEl.value?.select()
+  if (props.type === 'text' && !isEmpty.value) inputEl.value?.select()
 }
 
 function commit() {
@@ -52,9 +59,13 @@ function commit() {
     next = n
   } else {
     const s = String(draft.value).trim()
-    if (!s) return
-    if (props.maxlength && s.length > props.maxlength) return
-    next = s
+    if (!s) {
+      if (!props.allowEmpty) return
+      next = ''
+    } else {
+      if (props.maxlength && s.length > props.maxlength) return
+      next = s
+    }
   }
 
   if (next === props.modelValue) return
@@ -87,7 +98,10 @@ function cancel() {
     <span
       v-else
       class="editable"
-      :class="{ 'editable--disabled': disabled }"
+      :class="{
+        'editable--disabled': disabled,
+        'is-placeholder': isEmpty && !!placeholder,
+      }"
       :title="disabled ? undefined : 'Kliknij, aby edytować'"
       @click="startEdit"
     >
@@ -107,7 +121,7 @@ function cancel() {
   border-bottom: 1px dashed transparent;
   padding: 0.05rem 0.15rem;
   border-radius: 3px;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
 }
 
 .editable:hover:not(.editable--disabled) {
@@ -119,6 +133,10 @@ function cancel() {
   cursor: default;
 }
 
+.editable.is-placeholder {
+  font-style: italic;
+}
+
 .inline-edit--emphasis .editable {
   font-weight: 600;
   color: #111;
@@ -127,6 +145,19 @@ function cancel() {
 .inline-edit--muted .editable {
   color: #6b7280;
   font-size: 0.9rem;
+}
+
+.inline-edit--note .editable {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.inline-edit--note .editable.is-placeholder {
+  opacity: 0.35;
+}
+
+.inline-edit--note .editable:hover:not(.editable--disabled) {
+  opacity: 1;
 }
 
 .inline-input {

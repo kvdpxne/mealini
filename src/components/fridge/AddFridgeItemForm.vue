@@ -5,7 +5,7 @@ import {useAuthStore} from '@/stores/auth.store'
 import {useUserPreferences} from '@/composables/useUserPreferences'
 import {PRODUCT_CATEGORIES} from '@/lib/productCategories'
 import {UNITS} from '@/lib/units'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
 
 const fridgeStore = useFridgeStore()
 const authStore = useAuthStore()
@@ -16,6 +16,7 @@ const category = ref<string>('')
 const quantity = ref<number>(1)
 const unit = ref('szt')
 const expiryDate = ref('')
+const note = ref('')
 const submitting = ref(false)
 const localError = ref<string | null>(null)
 
@@ -31,6 +32,7 @@ async function handleSubmit() {
       quantity: quantity.value,
       unit: unit.value,
       expiry_date: expiryDate.value || null,
+      note: note.value.trim() || null,
     })
     if (preferences.value.clearInputAfterAdd) {
       name.value = ''
@@ -38,6 +40,7 @@ async function handleSubmit() {
       quantity.value = 1
       unit.value = 'szt'
       expiryDate.value = ''
+      note.value = ''
     }
   } catch (e) {
     localError.value = e instanceof Error ? e.message : 'Błąd dodawania'
@@ -65,6 +68,13 @@ async function handleSubmit() {
       <option v-for="u in UNITS" :key="u" :value="u">{{ u }}</option>
     </select>
     <input v-model="expiryDate" type="date" title="Data ważności (opcjonalnie)"/>
+    <input
+      v-model="note"
+      type="text"
+      :maxlength="LIMITS.note"
+      placeholder="Notatka (opcjonalnie)"
+      class="add-form__note"
+    />
     <button type="submit" :disabled="submitting">
       {{ submitting ? 'Dodawanie...' : 'Dodaj do lodówki' }}
     </button>
@@ -82,6 +92,15 @@ async function handleSubmit() {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+}
+
+.add-form__note {
+  flex: 1 1 100%;
+  min-width: 160px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
 .add-form input, .add-form select {

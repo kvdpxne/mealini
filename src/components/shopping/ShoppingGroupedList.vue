@@ -6,7 +6,7 @@ import type {ShoppingListItem, StoreZone} from '@/types/database.types'
 import type {ZoneGroup} from '@/composables/useShoppingLocationGroups'
 import {formatQuantityParts} from '@/lib/quantity'
 import {displayStepForUnit} from '@/lib/units'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
 
 defineProps<{
   groups: ZoneGroup[]
@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'set-zone', itemName: string, zoneId: string | null): void
   (e: 'update-name', id: string, name: string): void
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
+  (e: 'update-note', id: string, note: string | null): void
 }>()
 
 function displayQty(item: ShoppingListItem) {
@@ -31,6 +32,11 @@ function displayQty(item: ShoppingListItem) {
 function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
   const parts = displayQty(item)
   emit('update-quantity', item.id, newValue, parts.unit)
+}
+
+function handleNoteUpdate(id: string, newValue: string) {
+  const note = newValue.trim() || null
+  emit('update-note', id, note)
 }
 </script>
 
@@ -52,24 +58,38 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
         </label>
 
         <div class="content">
-          <InlineEdit
-            :model-value="item.name"
-            type="text"
-            :maxlength="NAME_MAX_LENGTH"
-            :disabled="!isOnline"
-            emphasis
-            @update="emit('update-name', item.id, $event as string)"
-          />
-          <InlineEdit
-            :model-value="displayQty(item).value"
-            type="number"
-            :min="0.01"
-            :step="displayStepForUnit(displayQty(item).unit)"
-            :suffix="displayQty(item).unit"
-            :disabled="!isOnline"
-            variant="muted"
-            @update="handleQtyUpdate(item, $event as number)"
-          />
+          <div class="main-line">
+            <InlineEdit
+              :model-value="item.name"
+              type="text"
+              :maxlength="NAME_MAX_LENGTH"
+              :disabled="!isOnline"
+              emphasis
+              @update="emit('update-name', item.id, $event as string)"
+            />
+            <InlineEdit
+              :model-value="displayQty(item).value"
+              type="number"
+              :min="0.01"
+              :step="displayStepForUnit(displayQty(item).unit)"
+              :suffix="displayQty(item).unit"
+              :disabled="!isOnline"
+              variant="muted"
+              @update="handleQtyUpdate(item, $event as number)"
+            />
+          </div>
+          <div class="note-line">
+            <InlineEdit
+              :model-value="item.note ?? ''"
+              type="text"
+              :maxlength="LIMITS.note"
+              :disabled="!isOnline"
+              variant="note"
+              placeholder="Dodaj notatkę"
+              allow-empty
+              @update="handleNoteUpdate(item.id, $event as string)"
+            />
+          </div>
         </div>
 
         <div class="zone-actions">
@@ -121,7 +141,7 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
 
 .zone-items li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: #fff;
@@ -131,15 +151,26 @@ function handleQtyUpdate(item: ShoppingListItem, newValue: number) {
 .check {
   display: inline-flex;
   cursor: pointer;
+  padding-top: 0.25rem;
 }
 
 .content {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.main-line {
+  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.5rem;
-  min-width: 0;
+}
+
+.note-line {
+  padding-left: 0.15rem;
 }
 
 .zone-actions {

@@ -101,6 +101,13 @@ async function handleUpdateName(id: string, name: string) {
   await run(() => fridgeStore.updateName(id, name))
 }
 
+async function handleUpdateNote(id: string, note: string | null) {
+  await run(async () => {
+    await fridgeStore.updateNote(id, note)
+    return true as const
+  })
+}
+
 onMounted(async () => {
   if (isOnline.value) {
     await initialFetch()
@@ -132,6 +139,7 @@ useRealtimePartnerToast<FridgeItem>(
       @move-to-shopping="handleMoveToShopping"
       @update-quantity="handleUpdateQuantity"
       @update-name="handleUpdateName"
+      @update-note="handleUpdateNote"
       @edit="editingItem = $event"
     />
     <EditFridgeItemModal

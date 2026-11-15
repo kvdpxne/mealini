@@ -7,7 +7,7 @@ import SkeletonList from '@/components/shared/SkeletonList.vue'
 import CategoryBadge from './CategoryBadge.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
-import {NAME_MAX_LENGTH} from '@/lib/validation'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
 import {formatQuantityParts} from '@/lib/quantity'
 import {displayStepForUnit} from '@/lib/units'
 
@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: 'move-to-shopping', id: string): void
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
   (e: 'update-name', id: string, name: string): void
+  (e: 'update-note', id: string, note: string | null): void
   (e: 'edit', item: FridgeItem): void
 }>()
 
@@ -31,10 +32,13 @@ function displayQty(item: FridgeItem) {
 }
 
 function handleQtyUpdate(item: FridgeItem, newValue: number) {
-  // Wyświetlana jednostka różni się od zapisanej – emit oba pola,
-  // żeby store zapisał spójną parę (np. 500 + 'g' zamiast 500 + 'kg').
   const parts = displayQty(item)
   emit('update-quantity', item.id, newValue, parts.unit)
+}
+
+function handleNoteUpdate(id: string, newValue: string) {
+  const note = newValue.trim() || null
+  emit('update-note', id, note)
 }
 </script>
 
@@ -46,28 +50,42 @@ function handleQtyUpdate(item: FridgeItem, newValue: number) {
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="badgeClass(item)">
       <div class="info">
-        <InlineEdit
-          :model-value="item.name"
-          type="text"
-          :maxlength="NAME_MAX_LENGTH"
-          :disabled="disabled"
-          emphasis
-          @update="emit('update-name', item.id, $event as string)"
-        />
-        <CategoryBadge :category="item.category"/>
-        <InlineEdit
-          :model-value="displayQty(item).value"
-          type="number"
-          :min="0.01"
-          :step="displayStepForUnit(displayQty(item).unit)"
-          :suffix="displayQty(item).unit"
-          :disabled="disabled"
-          variant="muted"
-          @update="handleQtyUpdate(item, $event as number)"
-        />
-        <span v-if="item.expiry_date" class="expiry">
-          {{ formatRelativeExpiry(item.expiry_date) }}
-        </span>
+        <div class="main-line">
+          <InlineEdit
+            :model-value="item.name"
+            type="text"
+            :maxlength="NAME_MAX_LENGTH"
+            :disabled="disabled"
+            emphasis
+            @update="emit('update-name', item.id, $event as string)"
+          />
+          <CategoryBadge :category="item.category"/>
+          <InlineEdit
+            :model-value="displayQty(item).value"
+            type="number"
+            :min="0.01"
+            :step="displayStepForUnit(displayQty(item).unit)"
+            :suffix="displayQty(item).unit"
+            :disabled="disabled"
+            variant="muted"
+            @update="handleQtyUpdate(item, $event as number)"
+          />
+          <span v-if="item.expiry_date" class="expiry">
+            {{ formatRelativeExpiry(item.expiry_date) }}
+          </span>
+        </div>
+        <div class="note-line">
+          <InlineEdit
+            :model-value="item.note ?? ''"
+            type="text"
+            :maxlength="LIMITS.note"
+            :disabled="disabled"
+            variant="note"
+            placeholder="Dodaj notatkę"
+            allow-empty
+            @update="handleNoteUpdate(item.id, $event as string)"
+          />
+        </div>
       </div>
       <div class="actions">
         <button title="Edytuj" :disabled="disabled" @click="emit('edit', item)">
@@ -104,11 +122,12 @@ function handleQtyUpdate(item: FridgeItem, newValue: number) {
 .list li {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   background: #fff;
   border-left: 4px solid #d1d5db;
+  gap: 0.5rem;
 }
 
 .list li.badge--expired {
@@ -130,15 +149,22 @@ function handleQtyUpdate(item: FridgeItem, newValue: number) {
 }
 
 .info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.main-line {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: baseline;
 }
 
-.qty {
-  color: #6b7280;
-  font-size: 0.9rem;
+.note-line {
+  padding-left: 0.15rem;
 }
 
 .expiry {
@@ -149,23 +175,26 @@ function handleQtyUpdate(item: FridgeItem, newValue: number) {
 .actions {
   display: flex;
   gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 .actions button {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.35rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   color: #6b7280;
+  padding: 0.35rem;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  display: inline-flex;
 }
 
-.actions button:hover {
+.actions button:hover:not(:disabled) {
   background: #f3f4f6;
   color: #111;
+}
+
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>

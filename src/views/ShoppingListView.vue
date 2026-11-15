@@ -35,14 +35,14 @@ const {
   stores, zones, currentMapUrl,
   isOnline,
   movingAll,
-  search, newItem, newQuantity, newUnit,
+  search, newItem, newQuantity, newUnit, newNote,
   toBuy, isSearchActive,
   activeStore, routeSortEnabled, useGroupedView, showBoughtSection,
   groups, zoneIdFor,
   selectStore,
   handleToggleRouteSort,
   handleAdd, handleQuickAdd, handleToggle,
-  handleUpdateName, handleUpdateQuantity,
+  handleUpdateName, handleUpdateQuantity, handleUpdateNote,
   handleDelete, handleClear,
   handleMoveToFridge, handleMoveAllBought, handleSetZone,
   bought,
@@ -78,6 +78,7 @@ const {
       v-model:name="newItem"
       v-model:quantity="newQuantity"
       v-model:unit="newUnit"
+      v-model:note="newNote"
       :disabled="!isOnline"
       @submit="handleAdd"
     />
@@ -131,6 +132,7 @@ const {
         @set-zone="handleSetZone"
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
+        @update-note="handleUpdateNote"
       />
       <ShoppingItemList
         v-else
@@ -143,6 +145,7 @@ const {
         @move-to-fridge="handleMoveToFridge"
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
+        @update-note="handleUpdateNote"
       />
     </section>
 
@@ -159,6 +162,7 @@ const {
       @clear="handleClear"
       @update-name="handleUpdateName"
       @update-quantity="handleUpdateQuantity"
+      @update-note="handleUpdateNote"
     />
 
     <SaveCurrentListModal :visible="showSaveSet" @close="showSaveSet = false"/>

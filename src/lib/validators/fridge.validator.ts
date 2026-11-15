@@ -1,6 +1,6 @@
-import { LIMITS, NAME_MAX_LENGTH } from '@/lib/validation'
-import { isValidProductCategory } from '@/lib/productCategories'
-import { assertName, assertUnit, assertQuantity } from './common'
+import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
+import {isValidProductCategory} from '@/lib/productCategories'
+import {assertName, assertOptionalName, assertQuantity, assertUnit} from './common'
 
 export interface FridgeItemInput {
   name: string
@@ -8,9 +8,11 @@ export interface FridgeItemInput {
   unit: string
   expiry_date: string | null
   category: string | null
+  note: string | null
 }
 
-export interface ValidatedFridgeItemInput extends FridgeItemInput {}
+export interface ValidatedFridgeItemInput extends FridgeItemInput {
+}
 
 export function validateFridgeItemInput(input: FridgeItemInput): ValidatedFridgeItemInput {
   const name = assertName(input.name, NAME_MAX_LENGTH, 'Nazwa produktu')
@@ -27,6 +29,7 @@ export function validateFridgeItemInput(input: FridgeItemInput): ValidatedFridge
     unit,
     expiry_date: input.expiry_date,
     category: input.category,
+    note: assertOptionalName(input.note, LIMITS.note, 'Notatka'),
   }
 }
 
@@ -56,4 +59,4 @@ export function validateFridgeItemQuantity(quantity: number): number {
 }
 
 // Re-eksport dla wygody importów z serwisu
-export { LIMITS }
+export {LIMITS}

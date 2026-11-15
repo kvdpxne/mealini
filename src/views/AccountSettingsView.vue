@@ -6,6 +6,7 @@ import AccountPreferencesSection from '@/components/account/AccountPreferencesSe
 import AccountPasswordSection from '@/components/account/AccountPasswordSection.vue'
 import AccountEmailSection from '@/components/account/AccountEmailSection.vue'
 import AccountExportSection from '@/components/account/AccountExportSection.vue'
+import AccountDangerSection from '@/components/account/AccountDangerSection.vue'
 </script>
 
 <template>
@@ -22,6 +23,7 @@ import AccountExportSection from '@/components/account/AccountExportSection.vue'
     <AccountPasswordSection/>
     <AccountEmailSection/>
     <AccountExportSection/>
+    <AccountDangerSection/>
   </div>
 </template>
 

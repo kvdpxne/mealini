@@ -140,11 +140,29 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function deleteAccount() {
+    loading.value = true
+    try {
+      await authService.deleteAccount()
+    } finally {
+      // Po delete user już nie istnieje, signOut może zwrócić błąd,
+      // ale i tak czyścimy lokalną sesję i stan.
+      try {
+        await authService.signOut()
+      } catch {
+        // świadomie ignorujemy, konto jest usunięte, liczy się cleanup
+      }
+      session.value = null
+      householdId.value = null
+      loading.value = false
+    }
+  }
+
   return {
     session, user, householdId, initialized, loading,
     isAuthenticated, sessionEndedReason,
     initialize, signIn, signUp, signOut, refreshHouseholdId,
     reauthenticate, resetPassword, updatePassword, updateEmail,
-    clearSessionEndedReason
+    clearSessionEndedReason, deleteAccount
   }
 })

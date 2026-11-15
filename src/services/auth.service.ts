@@ -77,4 +77,14 @@ export const authService = {
     const {error} = await supabase.auth.updateUser({email: newEmail})
     if (error) throw new Error(`Nie udało się zmienić adresu e-mail: ${error.message}`)
   },
+
+  async deleteAccount(): Promise<void> {
+    const {error} = await supabase.rpc('delete_current_user')
+    if (error) {
+      if (error.code === '42501') {
+        throw new Error('Nie udało się usunąć konta. Skontaktuj się z pomocą techniczną.')
+      }
+      throw new Error(`Nie udało się usunąć konta: ${error.message}`)
+    }
+  },
 }

@@ -7,6 +7,7 @@ export interface FridgeItem {
   expiry_date: string | null
   category: string | null
   note: string | null
+  image_path: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -20,6 +21,7 @@ export interface ShoppingListItem {
   unit: string
   is_bought: boolean
   note: string | null
+  image_path: string | null
   created_by: string | null
   created_at: string
 }

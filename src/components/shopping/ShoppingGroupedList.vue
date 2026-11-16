@@ -7,6 +7,7 @@ import type {ZoneGroup} from '@/composables/useShoppingLocationGroups'
 import {formatQuantityParts} from '@/lib/quantity'
 import {displayStepForUnit} from '@/lib/units'
 import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
+import ItemPhoto from '@/components/shared/ItemPhoto.vue'
 
 defineProps<{
   groups: ZoneGroup[]
@@ -23,6 +24,7 @@ const emit = defineEmits<{
   (e: 'update-name', id: string, name: string): void
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
   (e: 'update-note', id: string, note: string | null): void
+  (e: 'update-image', id: string, path: string | null): void
 }>()
 
 function displayQty(item: ShoppingListItem) {
@@ -38,6 +40,11 @@ function handleNoteUpdate(id: string, newValue: string) {
   const note = newValue.trim() || null
   emit('update-note', id, note)
 }
+
+function handleImageUpdate(id: string, newValue: string) {
+  const path = newValue.trim() || null
+  emit('update-image', id, path)
+}
 </script>
 
 <template>
@@ -48,6 +55,14 @@ function handleNoteUpdate(id: string, newValue: string) {
     </h3>
     <ul class="zone-items">
       <li v-for="item in group.items" :key="item.id">
+        <ItemPhoto
+          :image-path="item.image_path"
+          item-type="shopping"
+          :item-id="item.id"
+          :disabled="disabled"
+          @update:image-path="emit('update-image', item.id, $event)"
+        />
+
         <label class="check">
           <input
             type="checkbox"

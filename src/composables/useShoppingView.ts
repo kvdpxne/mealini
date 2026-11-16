@@ -153,6 +153,13 @@ export function useShoppingView() {
     })
   }
 
+  async function handleUpdateImage(id: string, path: string | null) {
+    await run(async () => {
+      await shoppingStore.updateImagePath(id, path)
+      return true as const
+    })
+  }
+
   async function handleDelete(id: string) {
     const ok = await confirm.ask('Usunąć tę pozycję?', 'Usuń pozycję')
     if (!ok) return
@@ -250,7 +257,7 @@ export function useShoppingView() {
     groups, zoneIdFor,
     selectStore, handleToggleRouteSort,
     handleAdd, handleQuickAdd, handleToggle,
-    handleUpdateName, handleUpdateQuantity, handleUpdateNote,
+    handleUpdateName, handleUpdateQuantity, handleUpdateNote, handleUpdateImage,
     handleDelete, handleClear,
     handleMoveToFridge, handleMoveAllBought, handleSetZone,
     clearError: shoppingStore.clearError,

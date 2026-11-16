@@ -5,6 +5,7 @@ import type {FridgeItem} from '@/types/database.types'
 import InlineEdit from '@/components/shared/InlineEdit.vue'
 import SkeletonList from '@/components/shared/SkeletonList.vue'
 import CategoryBadge from './CategoryBadge.vue'
+import ItemPhoto from '@/components/shared/ItemPhoto.vue'
 import {formatRelativeExpiry} from '@/utils/date'
 import {useFridgeItems} from '@/composables/useFridgeItems'
 import {LIMITS, NAME_MAX_LENGTH} from '@/lib/validation'
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   (e: 'update-quantity', id: string, quantity: number, unit: string): void
   (e: 'update-name', id: string, name: string): void
   (e: 'update-note', id: string, note: string | null): void
+  (e: 'update-image', id: string, path: string | null): void
   (e: 'edit', item: FridgeItem): void
 }>()
 
@@ -49,6 +51,13 @@ function handleNoteUpdate(id: string, newValue: string) {
   </div>
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="badgeClass(item)">
+      <ItemPhoto
+        :image-path="item.image_path"
+        item-type="fridge"
+        :item-id="item.id"
+        :disabled="disabled"
+        @update:image-path="emit('update-image', item.id, $event)"
+      />
       <div class="info">
         <div class="main-line">
           <InlineEdit

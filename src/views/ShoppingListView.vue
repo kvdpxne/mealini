@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {storeToRefs} from 'pinia'
-import {Package, Plus, Link2} from 'lucide-vue-next'
+import {Link2, Package, Plus} from 'lucide-vue-next'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useShoppingView} from '@/composables/useShoppingView'
 import ShoppingStoreBar from '@/components/shopping/ShoppingStoreBar.vue'
@@ -42,7 +42,7 @@ const {
   selectStore,
   handleToggleRouteSort,
   handleAdd, handleQuickAdd, handleToggle,
-  handleUpdateName, handleUpdateQuantity, handleUpdateNote,
+  handleUpdateName, handleUpdateQuantity, handleUpdateNote, handleImageUpdate,
   handleDelete, handleClear,
   handleMoveToFridge, handleMoveAllBought, handleSetZone,
   bought,
@@ -95,7 +95,7 @@ const {
 
         <div class="bulk-actions">
           <button class="secondary" :disabled="!isOnline" @click="showShare = true">
-            <Link2 :size="14" />
+            <Link2 :size="14"/>
             <span>Udostępnij</span>
           </button>
 
@@ -133,6 +133,7 @@ const {
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
         @update-note="handleUpdateNote"
+        @update-image="handleImageUpdate"
       />
       <ShoppingItemList
         v-else
@@ -146,6 +147,7 @@ const {
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
         @update-note="handleUpdateNote"
+        @update-image="handleImageUpdate"
       />
     </section>
 
@@ -168,7 +170,7 @@ const {
     <SaveCurrentListModal :visible="showSaveSet" @close="showSaveSet = false"/>
     <AddFromSetModal :visible="showAddFromSet" @close="showAddFromSet = false"/>
   </div>
-  <ShareShoppingListModal :visible="showShare" @close="showShare = false" />
+  <ShareShoppingListModal :visible="showShare" @close="showShare = false"/>
 </template>
 
 <style scoped>

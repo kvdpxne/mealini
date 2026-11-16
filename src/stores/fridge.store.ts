@@ -5,7 +5,7 @@ import {fridgeService} from '@/services/fridge.service'
 import {userScopedStorage} from '@/lib/userScopedStorage'
 
 type FridgeItemUpdates = Partial<
-  Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category' | 'note'>
+  Pick<FridgeItem, 'name' | 'quantity' | 'unit' | 'expiry_date' | 'category' | 'note' | 'image_path'>
 >
 
 export const useFridgeStore = defineStore('fridge', () => {
@@ -91,6 +91,10 @@ export const useFridgeStore = defineStore('fridge', () => {
     await updateItem(id, {note})
   }
 
+  async function updateImagePath(id: string, imagePath: string | null) {
+    await updateItem(id, {image_path: imagePath})
+  }
+
   function $reset() {
     items.value = []
     loading.value = false
@@ -99,7 +103,8 @@ export const useFridgeStore = defineStore('fridge', () => {
 
   return {
     items, loading, error, fetchItems, clearError, addItem, deleteItem,
-    restoreItem, moveToShopping, updateItem, updateQuantity, updateName, updateNote,
+    restoreItem, moveToShopping,
+    updateItem, updateQuantity, updateName, updateNote, updateImagePath,
     $reset
   }
 }, {

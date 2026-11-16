@@ -73,7 +73,7 @@ export const useShoppingStore = defineStore(
 
     async function updateItem(
       id: string,
-      updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit' | 'note'>>,
+      updates: Partial<Pick<ShoppingListItem, 'name' | 'quantity' | 'unit' | 'note' | 'image_path'>>
     ) {
       const previous = items.value.find(i => i.id === id)
       if (!previous) return
@@ -101,7 +101,11 @@ export const useShoppingStore = defineStore(
     }
 
     async function updateNote(id: string, note: string | null) {
-      await updateItem(id, { note })
+      await updateItem(id, {note})
+    }
+
+    async function updateImagePath(id: string, imagePath: string | null) {
+      await updateItem(id, {image_path: imagePath})
     }
 
     async function deleteItem(id: string): Promise<ShoppingListItem | undefined> {

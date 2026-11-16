@@ -108,6 +108,13 @@ async function handleUpdateNote(id: string, note: string | null) {
   })
 }
 
+async function handleUpdateImage(id: string, path: string | null) {
+  await run(async () => {
+    await fridgeStore.updateImagePath(id, path)
+    return true as const
+  })
+}
+
 onMounted(async () => {
   if (isOnline.value) {
     await initialFetch()
@@ -140,6 +147,7 @@ useRealtimePartnerToast<FridgeItem>(
       @update-quantity="handleUpdateQuantity"
       @update-name="handleUpdateName"
       @update-note="handleUpdateNote"
+      @update-image="handleUpdateImage"
       @edit="editingItem = $event"
     />
     <EditFridgeItemModal

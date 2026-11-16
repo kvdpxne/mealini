@@ -42,8 +42,8 @@ function handleNoteUpdate(id: string, newValue: string) {
   emit('update-note', id, note)
 }
 
-function handleImageUpdate(id: string, newValue: string) {
-  const path = newValue.trim() || null
+function handleImageUpdate(id: string, newValue: string | null) {
+  const path = newValue?.trim() ?? null;
   emit('update-image', id, path)
 }
 </script>
@@ -53,14 +53,6 @@ function handleImageUpdate(id: string, newValue: string) {
   <p v-else-if="items.length === 0" class="empty">{{ emptyText }}</p>
   <ul v-else class="list">
     <li v-for="item in items" :key="item.id" :class="{ bought: item.is_bought }">
-      <ItemPhoto
-        :image-path="item.image_path"
-        item-type="shopping"
-        :item-id="item.id"
-        :disabled="disabled"
-        @update:image-path="emit('update-image', item.id, $event)"
-      />
-
       <label class="check">
         <input
           type="checkbox"
@@ -69,6 +61,14 @@ function handleImageUpdate(id: string, newValue: string) {
           @change="emit('toggle', item.id)"
         />
       </label>
+
+      <ItemPhoto
+        :image-path="item.image_path"
+        item-type="shopping"
+        :item-id="item.id"
+        :disabled="disabled"
+        @update:image-path="handleImageUpdate(item.id, $event)"
+      />
 
       <div class="content">
         <div class="main-line">

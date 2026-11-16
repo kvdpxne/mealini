@@ -1,5 +1,6 @@
 import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
+import {supabase} from '@/lib/supabaseClient'
 import type {AuthChangeEvent, Session, User} from '@supabase/supabase-js'
 import {authService} from '@/services/auth.service'
 import {setStorageUser} from '@/lib/userScopedStorage'
@@ -101,6 +102,13 @@ export const useAuthStore = defineStore('auth', () => {
     householdId.value = await authService.getCurrentUserHouseholdId()
   }
 
+  async function refreshSession() {
+    const { data, error } = await supabase.auth.refreshSession()
+    if (!error && data.session) {
+      session.value = data.session
+    }
+  }
+
   async function reauthenticate() {
     loading.value = true
     try {
@@ -161,7 +169,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     session, user, householdId, initialized, loading,
     isAuthenticated, sessionEndedReason,
-    initialize, signIn, signUp, signOut, refreshHouseholdId,
+    initialize, signIn, signUp, signOut, refreshHouseholdId, refreshSession,
     reauthenticate, resetPassword, updatePassword, updateEmail,
     clearSessionEndedReason, deleteAccount
   }

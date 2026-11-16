@@ -42,7 +42,7 @@ const {
   selectStore,
   handleToggleRouteSort,
   handleAdd, handleQuickAdd, handleToggle,
-  handleUpdateName, handleUpdateQuantity, handleUpdateNote, handleImageUpdate,
+  handleUpdateName, handleUpdateQuantity, handleUpdateNote, handleUpdateImage,
   handleDelete, handleClear,
   handleMoveToFridge, handleMoveAllBought, handleSetZone,
   bought,
@@ -133,7 +133,7 @@ const {
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
         @update-note="handleUpdateNote"
-        @update-image="handleImageUpdate"
+        @update-image="handleUpdateImage"
       />
       <ShoppingItemList
         v-else
@@ -147,7 +147,7 @@ const {
         @update-name="handleUpdateName"
         @update-quantity="handleUpdateQuantity"
         @update-note="handleUpdateNote"
-        @update-image="handleImageUpdate"
+        @update-image="handleUpdateImage"
       />
     </section>
 

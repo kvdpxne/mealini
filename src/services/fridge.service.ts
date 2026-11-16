@@ -9,7 +9,10 @@ import {
   validateFridgeItemUnit,
 } from '@/lib/validators/fridge.validator'
 
-type NewFridgeItem = Omit<FridgeItem, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'name_normalized'>
+type NewFridgeItem = Omit<
+  FridgeItem,
+  'id' | 'created_at' | 'updated_at' | 'created_by' | 'name_normalized' | 'image_path'
+>
 
 export const fridgeService = {
   async getItems(householdId: string): Promise<FridgeItem[]> {
@@ -110,7 +113,7 @@ export const fridgeService = {
   },
 
   async restoreItem(item: FridgeItem): Promise<FridgeItem> {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from('fridge_items')
       .insert({
         id: item.id,

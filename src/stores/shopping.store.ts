@@ -167,7 +167,8 @@ export const useShoppingStore = defineStore(
       items, suggestions, loading, error,
       toBuy, bought,
       fetchItems, fetchSuggestions, clearError,
-      addItem, toggleBought, updateItem, updateName, updateQuantity, updateNote,
+      addItem, toggleBought,
+      updateItem, updateName, updateQuantity, updateNote, updateImagePath,
       deleteItem, clearBought, restoreItem,
       moveToFridge, moveAllBoughtToFridge,
       $reset

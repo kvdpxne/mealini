@@ -33,6 +33,14 @@ export const authService = {
     return () => data.subscription.unsubscribe()
   },
 
+  async resendVerification(email: string): Promise<void> {
+    const {error} = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    })
+    if (error) throw new Error(`Nie udało się wysłać linku: ${error.message}`)
+  },
+
   async getCurrentUserHouseholdId(): Promise<string | null> {
     const {data: {user}} = await supabase.auth.getUser()
     if (!user) return null

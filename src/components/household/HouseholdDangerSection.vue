@@ -7,6 +7,7 @@ import {useHouseholdStore} from '@/stores/household.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {useConfirmStore} from '@/stores/confirm.store'
 import {useAsyncAction} from '@/composables/useAsyncAction'
+import {HOUSEHOLD_MEMBERSHIP_LIMIT} from '@/lib/limits'
 
 const householdStore = useHouseholdStore()
 const authStore = useAuthStore()
@@ -41,6 +42,10 @@ async function handleLeave() {
           ? 'Jesteś ostatnim członkiem. Opuszczenie usunie gospodarstwo wraz z całą zawartością.'
           : 'Po opuszczeniu utracisz dostęp do lodówki i listy zakupów tego gospodarstwa.'
       }}
+    </p>
+    <p class="hint limit-hint">
+      Limit: <strong>{{ HOUSEHOLD_MEMBERSHIP_LIMIT }}</strong> gospodarstw domowych na konto.
+      Opuszczenie zwalnia miejsce dla nowego.
     </p>
     <button class="danger-btn" @click="handleLeave">
       <LogOut :size="16"/>
@@ -88,5 +93,11 @@ async function handleLeave() {
 
 .danger-btn:hover {
   background: #b91c1c;
+}
+
+.limit-hint {
+  margin-top: -0.25rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
 }
 </style>

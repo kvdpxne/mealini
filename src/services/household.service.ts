@@ -1,5 +1,6 @@
 import {supabase} from '@/lib/supabaseClient'
 import {validateHouseholdName} from '@/lib/validators/household.validator'
+import {HOUSEHOLD_MEMBERSHIP_LIMIT} from '@/lib/limits'
 
 export interface HouseholdMember {
   user_id: string
@@ -14,13 +15,23 @@ export interface HouseholdDetails {
   invite_code: string
 }
 
+function mapMembershipLimitError(error: { code?: string; message: string }): never {
+  if (error.code === 'P0HML' || error.message.includes('Przekroczono limit gospodarstw')) {
+    throw new Error(
+      `Możesz należeć do maksymalnie ${HOUSEHOLD_MEMBERSHIP_LIMIT} gospodarstw domowych. ` +
+      `Opuść jedno z istniejących, aby dołączyć do nowego.`,
+    )
+  }
+  throw new Error(`Nie udało się dołączyć do gospodarstwa: ${error.message}`)
+}
+
 export const householdService = {
   async createHousehold(name: string): Promise<string> {
     const trimmed = validateHouseholdName(name)
     const {data, error} = await supabase.rpc('create_household_for_current_user', {
       household_name: trimmed,
     })
-    if (error) throw new Error(`Nie udało się utworzyć gospodarstwa: ${error.message}`)
+    if (error) mapMembershipLimitError(error)
     return data as string
   },
 
@@ -28,7 +39,7 @@ export const householdService = {
     const {data, error} = await supabase.rpc('join_household_by_code', {
       code: code.trim(),
     })
-    if (error) throw new Error(`Nie udało się dołączyć: ${error.message}`)
+    if (error) mapMembershipLimitError(error)
     return data as string
   },
 

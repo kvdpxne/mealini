@@ -37,6 +37,7 @@ export interface UserProfile {
   first_name: string | null
   last_name: string | null
   nickname: string | null
+  avatar_id: string | null
   created_at: string
   updated_at: string
 }

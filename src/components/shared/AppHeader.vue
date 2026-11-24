@@ -4,6 +4,7 @@ import {RouterLink, useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
 import {useProfileStore} from '@/stores/profile.store'
 import {displayName} from '@/utils/displayName'
+import Avatar from '@/components/shared/Avatar.vue'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -34,6 +35,11 @@ async function handleLogout() {
       </nav>
 
       <div class="user">
+        <Avatar
+          :avatar-id="profileStore.profile?.avatar_id"
+          :name="displayName(profileStore.profile ?? authStore.user)"
+          size="sm"
+        />
         <span class="name" :title="authStore.user?.email ?? undefined">
           {{ displayName(profileStore.profile ?? authStore.user) }}
         </span>

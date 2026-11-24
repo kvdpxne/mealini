@@ -8,6 +8,7 @@ import AccountEmailSection from '@/components/account/AccountEmailSection.vue'
 import AccountExportSection from '@/components/account/AccountExportSection.vue'
 import AccountDangerSection from '@/components/account/AccountDangerSection.vue'
 import AccountSessionsSection from '@/components/account/AccountSessionsSection.vue'
+import AccountAvatarSection from '@/components/account/AccountAvatarSection.vue'
 </script>
 
 <template>
@@ -19,6 +20,7 @@ import AccountSessionsSection from '@/components/account/AccountSessionsSection.
       <span>Przejdź do ustawień gospodarstwa</span>
     </RouterLink>
 
+    <AccountAvatarSection/>
     <AccountProfileSection/>
     <AccountPreferencesSection/>
     <AccountPasswordSection/>

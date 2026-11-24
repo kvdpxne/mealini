@@ -7,6 +7,7 @@ export interface HouseholdMember {
   joined_at: string
   nickname: string | null
   email: string | null
+  avatar_id: string | null
 }
 
 export interface HouseholdDetails {

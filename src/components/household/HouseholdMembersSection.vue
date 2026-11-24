@@ -3,6 +3,7 @@ import {storeToRefs} from 'pinia'
 import {useHouseholdStore} from '@/stores/household.store'
 import {useAuthStore} from '@/stores/auth.store'
 import {displayName} from '@/utils/displayName'
+import Avatar from '@/components/shared/Avatar.vue'
 
 const householdStore = useHouseholdStore()
 const authStore = useAuthStore()
@@ -19,6 +20,7 @@ function formatJoinedAt(iso: string): string {
     <ul class="members">
       <li v-for="m in members" :key="m.user_id">
         <div class="member-main">
+          <Avatar :avatar-id="m.avatar_id" :name="displayName(m)" size="sm" />
           <strong>{{ displayName(m) }}</strong>
           <span v-if="m.user_id === authStore.user?.id" class="badge-you">Ty</span>
         </div>

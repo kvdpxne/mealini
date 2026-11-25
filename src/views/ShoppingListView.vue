@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {storeToRefs} from 'pinia'
-import {Link2, Package, Plus} from 'lucide-vue-next'
+import {Link2, Package, Plus, Share2} from 'lucide-vue-next'
 import {useShoppingStore} from '@/stores/shopping.store'
 import {useShoppingView} from '@/composables/useShoppingView'
 import ShoppingStoreBar from '@/components/shopping/ShoppingStoreBar.vue'
@@ -25,7 +25,8 @@ const {error} = storeToRefs(shoppingStore)
 const shoppingSetsStore = useShoppingSetsStore()
 const showSaveSet = ref(false)
 const showAddFromSet = ref(false)
-const showShare = ref(false)
+const showShareLink = ref(false)
+const showShareText = ref(false)
 
 const hasSetToOffer = computed(() => shoppingSetsStore.sets.length > 0)
 const hasItemsToSave = computed(() => toBuy.value.length > 0)
@@ -94,9 +95,23 @@ const {
         <h2>Do kupienia <span v-if="toBuy.length" class="count">({{ toBuy.length }})</span></h2>
 
         <div class="bulk-actions">
-          <button class="secondary" :disabled="!isOnline" @click="showShare = true">
+          <button
+            class="secondary"
+            :disabled="!isOnline"
+            title="Wygeneruj link do odhaczania przez inną osobę"
+            @click="showShareLink = true"
+          >
             <Link2 :size="14"/>
-            <span>Udostępnij</span>
+            <span>Udostępnij link</span>
+          </button>
+          <button
+            class="secondary"
+            :disabled="!isOnline"
+            title="Skopiuj lub udostępnij jako tekst (Google Keep)"
+            @click="showShareText = true"
+          >
+            <Share2 :size="14"/>
+            <span>Wyślij do Keep</span>
           </button>
 
           <button
@@ -170,7 +185,8 @@ const {
     <SaveCurrentListModal :visible="showSaveSet" @close="showSaveSet = false"/>
     <AddFromSetModal :visible="showAddFromSet" @close="showAddFromSet = false"/>
   </div>
-  <ShareShoppingListModal :visible="showShare" @close="showShare = false"/>
+  <ShareShoppingListModal :visible="showShareLink" @close="showShareLink = false"/>
+  <ShareAsTextModal :visible="showShareText" @close="showShareText = false"/>
 </template>
 
 <style scoped>

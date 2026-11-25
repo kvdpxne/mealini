@@ -21,6 +21,21 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null
     try {
       profile.value = await profileService.getProfile(authStore.user.id)
+
+      // OAuth seed: tylko dla nowych kont (profil pusty) i tylko raz.
+      // Sprawdzamy, czy WSZYSTKIE pola tekstowe są puste – jeśli użytkownik
+      // cokolwiek ustawił, nie ruszamy.
+      const isBlank =
+        !profile.value ||
+        (profile.value.first_name == null &&
+          profile.value.last_name == null &&
+          profile.value.nickname == null)
+
+      const isOAuth = authStore.user.app_metadata?.provider !== 'email'
+      if (isBlank && isOAuth) {
+        const seeded = await profileService.seedFromOAuth(authStore.user.id)
+        if (seeded) profile.value = seeded
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Nieznany błąd'
     } finally {

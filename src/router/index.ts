@@ -4,6 +4,7 @@ import {useAuthStore} from '@/stores/auth.store'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {path: '/auth/callback', component: () => import('@/views/AuthCallbackView.vue'), meta: {public: true}},
     {path: '/login', component: () => import('@/views/LoginView.vue'), meta: {public: true}},
     {path: '/forgot-password', component: () => import('@/views/ForgotPasswordView.vue'), meta: {public: true}},
     {path: '/reset-password', component: () => import('@/views/ResetPasswordView.vue'), meta: {public: true}},
@@ -31,6 +32,11 @@ router.beforeEach(async (to) => {
   // 1. Brak sesji
   if (!authStore.session) {
     return to.meta.public ? true : '/login'
+  }
+
+  // OAuth callback: zawsze wpuszczamy, token przetworzy się w widoku
+  if (to.path === '/auth/callback') {
+    return true
   }
 
   // 2. Sesja jest, ale e-mail niepotwierdzony

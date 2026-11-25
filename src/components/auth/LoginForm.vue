@@ -2,6 +2,7 @@
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {useAuthStore} from '@/stores/auth.store'
+import GoogleButton from '@/components/auth/GoogleButton.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -21,6 +22,10 @@ async function handleSubmit() {
 </script>
 
 <template>
+  <GoogleButton/>
+  <div class="divider">
+    <span>lub</span>
+  </div>
   <form class="auth-form" @submit.prevent="handleSubmit">
     <h2>Zaloguj się</h2>
     <label>
@@ -75,5 +80,21 @@ async function handleSubmit() {
   color: #0a7;
   text-align: center;
   margin-top: 0.25rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin: 0.25rem 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
 }
 </style>

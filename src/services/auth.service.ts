@@ -8,6 +8,20 @@ export const authService = {
     return data.session
   },
 
+  async signInWithGoogle(): Promise<void> {
+    const {error} = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    })
+    if (error) throw new Error(`Nie udało się zalogować przez Google: ${error.message}`)
+  },
+
   async signUp(email: string, password: string): Promise<Session | null> {
     const {data, error} = await supabase.auth.signUp({email, password})
     if (error) throw error

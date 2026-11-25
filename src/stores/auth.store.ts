@@ -70,6 +70,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function signInWithGoogle() {
+    loading.value = true
+    try {
+      await authService.signInWithGoogle()
+      // Przekierowanie następuje po stronie przeglądarki (window.location),
+      // więc dalszy kod się nie wykona w tej karcie.
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function signUp(email: string, password: string) {
     loading.value = true
     try {
@@ -103,7 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshSession() {
-    const { data, error } = await supabase.auth.refreshSession()
+    const {data, error} = await supabase.auth.refreshSession()
     if (!error && data.session) {
       session.value = data.session
     }
@@ -169,7 +180,8 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     session, user, householdId, initialized, loading,
     isAuthenticated, sessionEndedReason,
-    initialize, signIn, signUp, signOut, refreshHouseholdId, refreshSession,
+    initialize, signIn, signInWithGoogle, signUp, signOut,
+    refreshHouseholdId, refreshSession,
     reauthenticate, resetPassword, updatePassword, updateEmail,
     clearSessionEndedReason, deleteAccount
   }

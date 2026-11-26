@@ -1,0 +1,66 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # co poniedziałek 03:00 UTC
+  workflow_dispatch:    # ręczne uruchomienie
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # 1. Instalacja klienta PostgreSQL (pg_dump)
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      # 2. Instalacja age (szyfrowanie)
+      - uses: RobotsAndPencils/setup-age-action@v1.0.0
+
+      # 3. Instalacja rclone (upload do R2)
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      # 4. Dump + szyfrowanie
+      - name: Dump and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          AGE_PUBLIC_KEY: ${{ secrets.AGE_PUBLIC_KEY }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          mkdir -p backups
+          pg_dump \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="backups/mealini-${DATE}.dump" \
+            "$SUPABASE_DB_URL"
+          age --encrypt \
+            --recipient "$AGE_PUBLIC_KEY" \
+            --output "backups/mealini-${DATE}.dump.age" \
+            "backups/mealini-${DATE}.dump"
+          rm "backups/mealini-${DATE}.dump"   # nie zostawiamy niezaszyfrowanego
+
+      # 5. Upload do R2
+      - name: Upload to R2
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${R2_ACCESS_KEY_ID}
+          secret_access_key = ${R2_SECRET_ACCESS_KEY}
+          endpoint = https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+          EOF
+          rclone copy "backups/mealini-${DATE}.dump.age" "r2:${R2_BUCKET}/mealini/"
